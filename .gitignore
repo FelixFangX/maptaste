@@ -4,3 +4,6 @@ dist
 *.log
 showcase/node_modules
 showcase/dist
+
+# local capture frames
+docs/frames/

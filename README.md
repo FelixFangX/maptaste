@@ -1,10 +1,20 @@
 # maptaste
 
-MapLibre style taste checks for coding agents. M0: four heuristics, two skill packs, an MCP server, and a local map showcase.
+MapLibre style taste checks for coding agents. Four heuristics, two skill packs, an MCP server, and a local map showcase.
 
 ## Problem
 
 Agents ship ugly MapLibre styles: rainbow fills, faint labels, crowded names, and light-only palettes. Maptaste flags common mistakes before visual review. It is not a full MapLibre validator; expressions and real rendering still need inspection.
+
+## Demo
+
+![Maptaste demo](docs/demo.gif)
+
+From rainbow noise to sequential blues — Taste / Harsh and Light / Dark.
+
+| Harsh (MT001) | Taste | Dark |
+| --- | --- | --- |
+| ![Harsh](docs/example-harsh.png) | ![Taste](docs/example-taste.png) | ![Dark](docs/example-dark.png) |
 
 ## Install
 
@@ -23,7 +33,7 @@ maptaste check style.json --pack global
 maptaste check style.json --pack cn --format json
 ```
 
-JSON returns `{ findings, score, summary }`. Exit codes: 0 without errors, 1 with errors, 2 for bad input. Warnings and info do not fail the command.
+JSON output contains `{ findings, score, summary }`. Exit codes: 0 without errors, 1 with errors, 2 for bad input. Warnings and informational findings do not fail the command.
 
 | Rule | Default | Heuristic |
 | --- | --- | --- |
@@ -62,7 +72,7 @@ Load `skills/maptaste-global/SKILL.md` or `skills/maptaste-cn/SKILL.md` in your 
 
 ## Showcase
 
-Separate Vite app with local GeoJSON, sequential blues, and light/dark themes. No map token or tile service required; WebGL is required. Google Fonts supplies the single serif headline, with a local serif fallback.
+A standalone Vite app with local GeoJSON, a Taste/Harsh palette toggle, and light/dark themes. No map token or tile service required; WebGL is required. Google Fonts supplies the single serif headline, with a local serif fallback.
 
 ```sh
 cd showcase
@@ -79,10 +89,6 @@ pnpm install
 pnpm build
 pnpm test
 ```
-
-## Demo
-
-Add docs/demo.gif after recording.
 
 ## License
 

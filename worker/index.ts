@@ -48,11 +48,12 @@ export default {
         if (!first) return json({ error: 'not_found' }, 404);
         const lat = Number(first.lat), lng = Number(first.lon);
         if (!first.display_name || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error('Invalid result');
-        const short = first.display_name.split(',').slice(0, 2).map(part => part.trim()).join(', ');
-        const named = typeof first.name === 'string' && first.name.trim() ? first.name.trim() : '';
+        const clean = (value: string) => value.split(';')[0]!.split(',').map(part => part.trim()).filter(Boolean);
+        const short = clean(first.display_name).slice(0, 2).join(', ');
+        const named = typeof first.name === 'string' ? first.name.trim().split(';')[0]!.trim() : '';
         // Prefer local short name for proper nouns; keep city,country when that is clearer.
-        const name = (named && named.length <= 40 ? (short.includes(named) ? short : named) : short) || first.display_name;
-        const clipped = name.length <= 80 ? name : first.display_name.slice(0, 80);
+        const name = (named && named.length <= 40 ? (short.includes(named) ? short : named) : short) || named || first.display_name;
+        const clipped = name.length <= 80 ? name : clean(first.display_name).slice(0, 2).join(', ').slice(0, 80);
         return json({ ok: true, name: clipped, lat, lng, lang: acceptLanguage.split(',')[0], ...(first.boundingbox ? { bbox: first.boundingbox.map(Number) } : {}) }, 200, { 'Cache-Control': 'public, max-age=86400' });
       } catch { return json({ error: 'upstream_failed' }, 502); }
     }

@@ -10,7 +10,7 @@ Agents ship ugly MapLibre styles: rainbow fills, faint labels, crowded names, an
 
 ![Maptaste demo](docs/demo.gif)
 
-3D extruded cells: rainbow noise → sequential blues — Taste / Harsh and Light / Dark.
+The showcase pairs a cinematic MapLibre basemap with real San Francisco building massing: sequential blues in Taste, rainbow colors in Harsh, and Light / Dark themes. The demo GIF and images below show the earlier cell-based version.
 
 | Harsh (MT001) | Taste | Dark |
 | --- | --- | --- |
@@ -72,7 +72,9 @@ Load `skills/maptaste-global/SKILL.md` or `skills/maptaste-cn/SKILL.md` in your 
 
 ## Showcase
 
-A standalone Vite app with local GeoJSON, MapLibre fill-extrusion (pitch ~55°), a Taste/Harsh palette toggle, and light/dark themes. No map token or tile service required; WebGL is required. Google Fonts supplies the single serif headline, with a local serif fallback.
+A standalone Vite + MapLibre app with a cinematic San Francisco basemap, real building footprints and heights, a 57° pitched camera, and soft sky haze. Taste / Harsh switches sequential blues to a loud rainbow; Light / Dark changes the full map palette. Both preserve your camera.
+
+A local snapshot of the public OpenFreeMap Liberty style is adapted in `showcase/src/main.ts`. OpenFreeMap supplies tiles, glyphs, and sprites without an API key; an internet connection and WebGL are required. Map attribution remains visible. Google Fonts supplies Instrument Serif, with a local serif fallback.
 
 ```sh
 cd showcase

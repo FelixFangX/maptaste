@@ -7,3 +7,6 @@ showcase/dist
 
 # local capture frames
 docs/frames/
+
+# local visual references (do not publish)
+docs/ref/

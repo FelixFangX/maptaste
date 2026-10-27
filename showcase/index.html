@@ -1,2 +1,32 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Maptaste — Map taste.</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap" rel="stylesheet"></head><body><div id="app"><header><a href="https://github.com/FelixFangX" class="brand">maptaste <span> / 001</span></a><div class="controls"><button id="palette" type="button" aria-label="Harsh palette" aria-pressed="false">Taste</button><button id="theme" type="button" aria-label="Dark theme" aria-pressed="false">Dark</button></div></header><main><div class="intro"><h1>Map taste.</h1><p>Fewer colors. Clearer places.</p></div><section class="map-shell" aria-label="Map showcase"><div id="map"></div><div class="map-caption"><span>San Francisco Bay</span><span id="palette-caption">01 — 06</span></div></section><footer><span>Local GeoJSON</span><span>MapLibre / M0</span></footer></main></div><script type="module" src="/src/main.ts"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f8f6">
+  <title>maptaste — A sense of place.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <a href="https://github.com/FelixFangX" class="brand">maptaste<span> / 001</span></a>
+      <div class="controls" aria-label="Map appearance">
+        <button id="palette" type="button" aria-label="Harsh palette" aria-pressed="false">Taste</button>
+        <button id="theme" type="button" aria-label="Dark theme" aria-pressed="false">Dark</button>
+      </div>
+    </header>
+    <main>
+      <div class="intro"><h1>A sense of <em>place.</em></h1><p>Fewer colors.<br>Clearer places.</p></div>
+      <section class="map-shell" aria-label="Interactive San Francisco building map">
+        <div id="map"></div>
+        <p id="map-status" role="status" hidden></p>
+        <div class="place-caption"><span>San Francisco</span><span>37.7947° N / 122.4024° W</span></div>
+      </section>
+      <footer><span>A little perspective changes everything.</span><span>Built with MapLibre</span></footer>
+    </main>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

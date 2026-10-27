@@ -28,7 +28,9 @@
   "vars": {
     "GLOBAL_DAILY_SESSIONS": "5000",
     "IP_DAILY_SESSIONS": "20",
-    "IP_REQUESTS_PER_MINUTE": "10"
+    "IP_REQUESTS_PER_MINUTE": "10",
+    "GLOBAL_DAILY_AI_RESOLVES": "2000",
+    "IP_DAILY_AI_RESOLVES": "40"
   },
   "observability": {
     "enabled": true
@@ -41,7 +43,9 @@
       "vars": {
         "GLOBAL_DAILY_SESSIONS": "5000",
         "IP_DAILY_SESSIONS": "20",
-        "IP_REQUESTS_PER_MINUTE": "10"
+        "IP_REQUESTS_PER_MINUTE": "10",
+        "GLOBAL_DAILY_AI_RESOLVES": "2000",
+        "IP_DAILY_AI_RESOLVES": "40"
       },
       "d1_databases": [
         {
@@ -50,7 +54,13 @@
           "database_id": "ec2686f8-a443-4973-92d5-90bda659a2b2",
           "migrations_dir": "worker/migrations"
         }
-      ]
+      ],
+      "ai": {
+        "binding": "AI"
+      }
     }
+  },
+  "ai": {
+    "binding": "AI"
   }
 }

@@ -2,6 +2,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { buildPreviewUrl, type PreviewArgs } from '../preview-url.js';
 import { check } from '../engine.js';
 import { object } from '../rules/utils.js';
 export function validateStyle(style: unknown): {ok: boolean; errors: string[]} {
@@ -14,6 +15,7 @@ const server=new Server({name:'maptaste',version:'0.0.1'},{capabilities:{tools:{
 server.setRequestHandler(ListToolsRequestSchema,async()=>({tools:[
  {name:'check_taste',description:'Check MapLibre style taste heuristics',inputSchema:{type:'object',properties:{style:{type:'object'},styleJson:{type:'string'}},anyOf:[{required:['style']},{required:['styleJson']}],additionalProperties:false}},
  {name:'validate_style',description:'Basic style structure validation (not the full MapLibre schema)',inputSchema:{type:'object',properties:{style:{}},required:['style'],additionalProperties:false}},
+ {name:'preview_place',description:'Open a hosted place preview; named places are geocoded by the browser',inputSchema:{type:'object',properties:{place:{type:'string',minLength:1,maxLength:80},ll:{type:'string',description:'lng,lat'},zoom:{type:'number',minimum:0,maximum:24},mode:{enum:['before','after']},theme:{enum:['light','dark']}},anyOf:[{required:['place']},{required:['ll']}],additionalProperties:false}},
  {name:'preview_info',description:'Locate the local MapLibre showcase',inputSchema:{type:'object',properties:{},additionalProperties:false}}
 ]}));
 server.setRequestHandler(CallToolRequestSchema,async(request)=>{
@@ -22,6 +24,7 @@ server.setRequestHandler(CallToolRequestSchema,async(request)=>{
  switch(request.params.name) {
  case 'check_taste': result=check((args.style??JSON.parse(String(args.styleJson)) ) as Record<string,unknown>); break;
  case 'validate_style': result=validateStyle(args.style); break;
+ case 'preview_place': result=buildPreviewUrl(args as PreviewArgs); break;
  case 'preview_info': result={showcasePath:'showcase/',how:'cd showcase && pnpm install && pnpm dev',note:'Open local Vite MapLibre showcase'}; break;
  default: throw new Error(`Unknown tool: ${request.params.name}`);
  }

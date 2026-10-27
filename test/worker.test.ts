@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import worker, { type Env } from '../worker/index';
 import { buckets } from '../worker/quota';
 
@@ -60,5 +60,37 @@ describe('session quota worker', () => {
     expect(keys.resetsAt).toBe('2026-10-28T00:00:00.000Z');
     expect(keys.retryAfter).toBe(1);
     expect((await buckets('192.0.2.1', new Date('2026-10-28T00:00:00Z'))).ip).not.toBe(keys.ip);
+  });
+});
+
+
+describe('geocode', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it('validates queries before fetching', async () => {
+    const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
+    const { call } = setup();
+    for (const path of ['/api/geocode', '/api/geocode?q=%20', `/api/geocode?q=${'x'.repeat(81)}`]) expect((await call(path)).status).toBe(400);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it('maps and caches results, shares rate limits, and never charges sessions', async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json([{ display_name: 'Tokyo, Japan, Asia', lat: '35.6812', lon: '139.7671', boundingbox: ['35', '36', '139', '140'] }]));
+    vi.stubGlobal('fetch', fetcher);
+    const { call } = setup();
+    const response = await call('/api/geocode?q=%20Tokyo%20');
+    expect(await response.json()).toEqual({ ok: true, name: 'Tokyo, Japan', lat: 35.6812, lng: 139.7671, bbox: [35, 36, 139, 140] });
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=86400');
+    const [url, options] = fetcher.mock.calls[0];
+    expect(url.searchParams.get('q')).toBe('Tokyo');
+    expect(options.headers).toEqual({ 'User-Agent': 'maptaste.ledring.dev/0.1 (felix@ledring.dev)', 'Accept-Language': 'en' });
+    expect((await (await call('/api/status')).json()).quota.globalUsed).toBe(0);
+    expect((await call()).status).toBe(200);
+    expect((await call('/api/geocode?q=Tokyo')).status).toBe(429);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it.each([['empty', 404], ['missing', 404], ['failure', 502], ['network', 502], ['malformed', 502]])('handles %s upstream responses', async (kind, code) => {
+    vi.stubGlobal('fetch', kind === 'network' ? vi.fn().mockRejectedValue(new Error('offline')) : vi.fn().mockResolvedValue(kind === 'empty' ? Response.json([]) : kind === 'malformed' ? Response.json({}) : new Response('', { status: kind === 'missing' ? 404 : 503 })));
+    const response = await setup().call('/api/geocode?q=Tokyo');
+    expect(response.status).toBe(code);
+    expect((await response.json()).error).toBe(code === 404 ? 'not_found' : 'upstream_failed');
   });
 });

@@ -151,15 +151,49 @@ for (const [index, layer] of baseStyle.layers.entries()) {
   const properties = (values: Properties) => Object.fromEntries(Object.entries(values).filter(([, value]) => value != null));
   Object.assign(layer, { paint: properties(initial.layers[index].paint), layout: properties(initial.layers[index].layout) });
 }
-let dark = false;
-let before = false;
+const params = new URLSearchParams(location.search);
+let dark = params.get('theme') === 'dark';
+let before = params.get('mode') === 'before';
 let applied = initial;
 let ready = false;
 let map: maplibregl.Map;
-function startMap() {
+async function resolvePlace() {
+  try {
+    let center: [number, number] = [-122.4024, 37.7947];
+    let name = params.get('place')?.trim() || 'San Francisco';
+    if (params.has('ll')) {
+      const parts = params.get('ll')!.split(',');
+      const values = parts.map(Number);
+      if (parts.length !== 2 || parts.some(part => !part.trim()) || !values.every(Number.isFinite) || Math.abs(values[0]) > 180 || Math.abs(values[1]) > 90) throw new Error('Invalid coordinates.');
+      center = [values[0], values[1]];
+      if (!params.get('place')?.trim()) name = 'Selected place';
+    } else if (params.has('place')) {
+      const response = await fetch(`/api/geocode?${new URLSearchParams({ q: params.get('place')!.trim() })}`);
+      if (!response.ok) throw new Error(response.status === 404 ? 'Place not found.' : 'Could not resolve place. Try again.');
+      const result = await response.json();
+      if (result.ok !== true || !Number.isFinite(result.lng) || !Number.isFinite(result.lat) || Math.abs(result.lng) > 180 || Math.abs(result.lat) > 90 || typeof result.name !== 'string') throw new Error('Could not resolve place.');
+      center = [result.lng, result.lat]; name = result.name;
+    }
+    const number = (key: string, fallback: number, min: number, max: number) => {
+      if (!params.has(key)) return fallback;
+      const value = Number(params.get(key));
+      if (!params.get(key)?.trim() || !Number.isFinite(value) || value < min || value > max) throw new Error(`Invalid ${key}.`);
+      return value;
+    };
+    const camera = { center, zoom: number('z', 15.4, 0, 24), pitch: number('pitch', 57, 0, 70), bearing: number('bearing', -32, -360, 360) };
+    document.querySelector('.place-title')!.textContent = name;
+    document.querySelector('#place-coords')!.textContent = `${Math.abs(center[1]).toFixed(4)}° ${center[1] < 0 ? 'S' : 'N'} / ${Math.abs(center[0]).toFixed(4)}° ${center[0] < 0 ? 'W' : 'E'}`;
+    document.querySelector('.map-shell')!.setAttribute('aria-label', `Interactive ${name} building map`);
+    startMap(camera);
+  } catch (error) {
+    status.hidden = false;
+    status.textContent = error instanceof Error ? error.message : 'Could not resolve place.';
+  }
+}
+function startMap(camera: { center: [number, number]; zoom: number; pitch: number; bearing: number }) {
   map = new maplibregl.Map({
     container: 'map', style: baseStyle,
-    center: [-122.4024, 37.7947], zoom: 15.4, pitch: 57, bearing: -32,
+    ...camera,
     fadeDuration: 0, renderWorldCopies: false, refreshExpiredTiles: false,
     pixelRatio: Math.min(window.devicePixelRatio, 1.5),
     // Keep edge antialiasing; the DPR cap bounds its framebuffer cost.
@@ -211,16 +245,16 @@ async function beginSession() {
   try {
     response = await fetch('/api/session', { method: 'POST' });
   } catch {
-    if (localDev) { startMap(); return; }
+    if (localDev) { await resolvePlace(); return; }
     status.hidden = false;
     status.textContent = 'Could not connect. Check your connection and try again.';
     return;
   }
-  if (localDev && response.status === 404) { startMap(); return; }
+  if (localDev && response.status === 404) { await resolvePlace(); return; }
   if (response.ok) {
     try {
       const session = await response.json();
-      if (session.ok === true) { startMap(); return; }
+      if (session.ok === true) { await resolvePlace(); return; }
     } catch { /* A non-API response must not start the hosted map. */ }
   }
   status.hidden = false;
@@ -228,4 +262,8 @@ async function beginSession() {
     ? 'Daily demo limit reached. Try again after UTC reset.'
     : 'Could not start the demo. Check your connection and try again.';
 }
+document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+theme.textContent = dark ? 'Light' : 'Dark';
+theme.setAttribute('aria-pressed', String(dark));
+modeButtons.forEach(control => control.setAttribute('aria-pressed', String((control.dataset.mode === 'before') === before)));
 void beginSession();

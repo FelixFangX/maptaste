@@ -82,6 +82,12 @@ Metadata keys containing `dark`, `theme`, or `styles` count as theme considerati
 
 ## Showcase
 
+Agents can preview any place with the same Before/After themes using a name or coordinates:
+
+- https://maptaste.ledring.dev/?place=Tokyo
+- https://maptaste.ledring.dev/?ll=139.7671,35.6812&place=Tokyo
+
+
 A Vite + MapLibre demo on real OpenFreeMap San Francisco buildings at pitch 57°. Before pairs stock Liberty with categorical Set1 height steps. After opens by default with sequential blues, a paper or void base, and Light / Dark paint-only toggles that keep the camera.
 
 Live: [maptaste.ledring.dev](https://maptaste.ledring.dev) (daily per-IP session quota).
@@ -113,7 +119,7 @@ Add to Claude Desktop or Cursor (replace the absolute path, or use the `maptaste
 }
 ```
 
-Tools: `check_taste` accepts `{ "style": {} }` or `{ "styleJson": "..." }`; `validate_style` checks object / version / layers structure; `preview_info` locates the showcase. Validation is intentionally basic.
+Tools: `check_taste` accepts `{ "style": {} }` or `{ "styleJson": "..." }`; `validate_style` checks object / version / layers structure; `preview_info` locates the showcase; `preview_place` returns a hosted URL from `place` or `ll` (lng,lat), with optional `zoom`, `mode`, and `theme`. Named places resolve in the browser; `center` is null until resolved. Validation is intentionally basic.
 
 ## Status
 

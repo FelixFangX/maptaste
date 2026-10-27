@@ -14,15 +14,42 @@ function json(value: unknown, status = 200, headers: Record<string, string> = {}
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const path = new URL(request.url).pathname;
+    const url = new URL(request.url);
+    const path = url.pathname;
     if (!path.startsWith('/api/')) return env.ASSETS.fetch(request);
-    if (path !== '/api/status' && path !== '/api/session') return json({ error: 'not_found' }, 404);
-    const method = path === '/api/status' ? 'GET' : 'POST';
+    if (path !== '/api/status' && path !== '/api/session' && path !== '/api/geocode') return json({ error: 'not_found' }, 404);
+    const method = path === '/api/session' ? 'POST' : 'GET';
     if (request.method !== method) return json({ error: 'method_not_allowed' }, 405, { Allow: method });
 
     const now = new Date();
     const keys = await buckets(request.headers.get('CF-Connecting-IP') ?? 'unknown', now);
     const store = new D1Store(env.DB);
+    if (path === '/api/geocode') {
+      const q = url.searchParams.get('q')?.trim();
+      if (!q || q.length > 80) return json({ error: 'invalid_query' }, 400);
+      const requests = await store.increment(keys.minute, now.getTime());
+      if (requests > Number(env.IP_REQUESTS_PER_MINUTE)) {
+        return json({ error: 'rate_limited', retryAfter: keys.retryAfter }, 429, { 'Retry-After': String(keys.retryAfter) });
+      }
+      try {
+        const upstream = new URL('https://nominatim.openstreetmap.org/search');
+        upstream.search = new URLSearchParams({ format: 'jsonv2', limit: '1', q }).toString();
+        const response = await fetch(upstream, { headers: {
+          'User-Agent': 'maptaste.ledring.dev/0.1 (felix@ledring.dev)', 'Accept-Language': 'en',
+        } });
+        if (response.status === 404) return json({ error: 'not_found' }, 404);
+        if (!response.ok) return json({ error: 'upstream_failed' }, 502);
+        const results = await response.json() as { display_name: string; lat: string; lon: string; boundingbox?: string[] }[];
+        if (!Array.isArray(results)) throw new Error('Invalid geocoder response');
+        const first = results[0];
+        if (!first) return json({ error: 'not_found' }, 404);
+        const lat = Number(first.lat), lng = Number(first.lon);
+        if (!first.display_name || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error('Invalid result');
+        const short = first.display_name.split(',').slice(0, 2).map(part => part.trim()).join(', ');
+        const name = short && short.length <= 80 ? short : first.display_name;
+        return json({ ok: true, name, lat, lng, ...(first.boundingbox ? { bbox: first.boundingbox.map(Number) } : {}) }, 200, { 'Cache-Control': 'public, max-age=86400' });
+      } catch { return json({ error: 'upstream_failed' }, 502); }
+    }
     const globalLimit = Number(env.GLOBAL_DAILY_SESSIONS);
     const ipLimit = Number(env.IP_DAILY_SESSIONS);
     async function quota() {

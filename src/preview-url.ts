@@ -1,5 +1,6 @@
 export interface PreviewArgs {
   place?: string;
+  lang?: string;
   ll?: string;
   zoom?: number;
   mode?: 'before' | 'after';
@@ -7,9 +8,9 @@ export interface PreviewArgs {
 }
 
 export function buildPreviewUrl(args: PreviewArgs) {
-  const allowed = ['place', 'll', 'zoom', 'mode', 'theme'];
+  const allowed = ['place', 'll', 'zoom', 'mode', 'theme', 'lang'];
   if (Object.keys(args).some(key => !allowed.includes(key))) throw new Error('Unknown preview argument');
-  if (args.place !== undefined && (typeof args.place !== 'string' || !args.place.trim() || args.place.trim().length > 80)) throw new Error('place must contain 1–80 characters');
+  if (args.place !== undefined && (typeof args.place !== 'string' || !args.place.trim() || args.place.trim().length > 120)) throw new Error('place must contain 1–120 characters');
   if (args.ll !== undefined && typeof args.ll !== 'string') throw new Error('ll must be lng,lat');
   if (!args.place && !args.ll) throw new Error('Provide place or ll');
   let center: [number, number] | null = null;
@@ -29,6 +30,7 @@ export function buildPreviewUrl(args: PreviewArgs) {
   if (args.zoom !== undefined) url.searchParams.set('z', String(zoom));
   if (args.mode) url.searchParams.set('mode', args.mode);
   if (args.theme) url.searchParams.set('theme', args.theme);
+  if (args.lang) url.searchParams.set('lang', args.lang.trim());
   return { url: url.toString(), center, zoom, pitch: 57, bearing: -32,
     ...(args.place ? { name: args.place.trim() } : {}),
     how: 'Open the URL or embed; session quota still applies on first interactive load' };

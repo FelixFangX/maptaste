@@ -69,7 +69,7 @@ describe('geocode', () => {
   it('validates queries before fetching', async () => {
     const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
     const { call } = setup();
-    for (const path of ['/api/geocode', '/api/geocode?q=%20', `/api/geocode?q=${'x'.repeat(81)}`]) expect((await call(path)).status).toBe(400);
+    for (const path of ['/api/geocode', '/api/geocode?q=%20', `/api/geocode?q=${'x'.repeat(121)}`]) expect((await call(path)).status).toBe(400);
     expect(fetcher).not.toHaveBeenCalled();
   });
   it('maps and caches results, shares rate limits, and never charges sessions', async () => {
@@ -77,7 +77,7 @@ describe('geocode', () => {
     vi.stubGlobal('fetch', fetcher);
     const { call } = setup();
     const response = await call('/api/geocode?q=%20Tokyo%20');
-    expect(await response.json()).toEqual({ ok: true, name: 'Tokyo, Japan', lat: 35.6812, lng: 139.7671, bbox: [35, 36, 139, 140] });
+    expect(await response.json()).toEqual({ ok: true, name: 'Tokyo, Japan', lat: 35.6812, lng: 139.7671, lang: 'en', bbox: [35, 36, 139, 140] });
     expect(response.headers.get('Cache-Control')).toBe('public, max-age=86400');
     const [url, options] = fetcher.mock.calls[0];
     expect(url.searchParams.get('q')).toBe('Tokyo');

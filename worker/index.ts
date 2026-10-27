@@ -56,19 +56,26 @@ export default {
           return results[0];
         }
         let expanded: string | null = cached?.place ?? null;
-        let first = await nominatim(expanded ?? raw);
-        if (!cached && (!first || (isNicknameLike(raw) && !looksLikeMatch(raw, first.name, first.display_name)))) {
-          const globalBucket = `gai:${keys.day}`;
-          const ipBucket = `aip:${keys.day}:${keys.ip.split(':').at(-1)}`;
-          const globalLimit = Number(env.GLOBAL_DAILY_AI_RESOLVES);
-          const ipLimit = Number(env.IP_DAILY_AI_RESOLVES);
-          if (!await store.reserve(globalBucket, ipBucket, 1, globalLimit, ipLimit, now.getTime())) {
-            const globalUsed = await store.used(globalBucket);
-            return json({ error: 'quota_exhausted', scope: globalUsed + 1 > globalLimit ? 'ai_global' : 'ai_ip', resetsAt: keys.resetsAt }, 429);
+        let first = expanded ? await nominatim(expanded) : undefined;
+        // Meme/nickname queries always go through Workers AI — Nominatim alone misreads them.
+        if (!cached && !expanded) {
+          const nickname = isNicknameLike(raw);
+          if (!nickname) {
+            first = await nominatim(raw);
           }
-          expanded = await aiExpandPlace(env.AI, raw, acceptLanguage);
-          if (!expanded) return json({ error: 'not_found' }, 404);
-          first = await nominatim(expanded);
+          if (nickname || !first || !looksLikeMatch(raw, first?.name, first?.display_name)) {
+            const globalBucket = `gai:${keys.day}`;
+            const ipBucket = `aip:${keys.day}:${keys.ip.split(':').at(-1)}`;
+            const globalLimit = Number(env.GLOBAL_DAILY_AI_RESOLVES);
+            const ipLimit = Number(env.IP_DAILY_AI_RESOLVES);
+            if (!await store.reserve(globalBucket, ipBucket, 1, globalLimit, ipLimit, now.getTime())) {
+              const globalUsed = await store.used(globalBucket);
+              return json({ error: 'quota_exhausted', scope: globalUsed + 1 > globalLimit ? 'ai_global' : 'ai_ip', resetsAt: keys.resetsAt }, 429);
+            }
+            expanded = await aiExpandPlace(env.AI, raw, acceptLanguage);
+            if (!expanded) return json({ error: 'not_found' }, 404);
+            first = await nominatim(expanded);
+          }
         }
         if (!first) return json({ error: 'not_found' }, 404);
         const lat = Number(first.lat), lng = Number(first.lon);
@@ -81,7 +88,7 @@ export default {
         // Prefer local short name for proper nouns; keep city,country when that is clearer.
         const name = (named && named.length <= 40 ? (short.includes(named) ? short : named) : short) || named || first.display_name;
         const clipped = name.length <= 80 ? name : clean(first.display_name).slice(0, 2).join(', ').slice(0, 80);
-        return json({ ok: true, name: clipped, lat, lng, lang: acceptLanguage.split(',')[0], ...(expanded ? { resolvedVia: 'ai', resolvedAs: expanded } : { resolvedVia: 'nominatim' }), ...(first.boundingbox ? { bbox: first.boundingbox.map(Number) } : {}) }, 200, { 'Cache-Control': 'public, max-age=86400' });
+        return json({ ok: true, name: clipped, lat, lng, lang: acceptLanguage.split(',')[0], ...(expanded ? { resolvedVia: 'ai', resolvedAs: expanded } : { resolvedVia: 'nominatim' }), ...(first.boundingbox ? { bbox: first.boundingbox.map(Number) } : {}) }, 200, { 'Cache-Control': 'public, max-age=3600' });
       } catch { return json({ error: 'upstream_failed' }, 502); }
     }
     const globalLimit = Number(env.GLOBAL_DAILY_SESSIONS);

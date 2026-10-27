@@ -12,17 +12,20 @@
   <div id="app">
     <header>
       <a href="https://github.com/FelixFangX" class="brand">maptaste<span> / 001</span></a>
-      <div class="controls" aria-label="Map appearance">
-        <button id="palette" type="button" aria-label="Harsh palette" aria-pressed="false">Taste</button>
+      <div class="controls" role="group" aria-label="Map appearance">
+        <div class="mode-control" role="group" aria-label="Before and after">
+          <button type="button" data-mode="before" aria-pressed="false">Before</button>
+          <button type="button" data-mode="after" aria-pressed="true">After</button>
+        </div>
         <button id="theme" type="button" aria-label="Dark theme" aria-pressed="false">Dark</button>
       </div>
     </header>
     <main>
-      <div class="intro"><h1>A sense of <em>place.</em></h1><p>Fewer colors.<br>Clearer places.</p></div>
+      <div class="intro"><h1>A sense of <em>place.</em></h1><p>Before / After.<br>A change in perspective.</p></div>
       <section class="map-shell" aria-label="Interactive San Francisco building map">
         <div id="map"></div>
         <p id="map-status" role="status" hidden></p>
-        <div class="place-caption"><span>San Francisco</span><span>37.7947° N / 122.4024° W</span></div>
+        <div class="place-caption"><span class="place-title">San Francisco <span id="map-mode">After</span></span><span>37.7947° N / 122.4024° W</span></div>
       </section>
       <footer><span>A little perspective changes everything.</span><span>Built with MapLibre</span></footer>
     </main>

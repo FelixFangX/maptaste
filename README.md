@@ -8,13 +8,13 @@ Agents ship ugly MapLibre styles: rainbow fills, faint labels, crowded names, an
 
 ## Demo
 
-![Maptaste demo](docs/demo.gif)
+![Before / After demo](docs/demo.gif)
 
-The showcase pairs a cinematic MapLibre basemap with real San Francisco building massing: sequential blues in Taste, rainbow colors in Harsh, and Light / Dark themes. The demo GIF and images below show the earlier cell-based version.
+Before / After: compare a stock Liberty basemap and categorical Set1 building colors with a cinematic basemap and sequential blues. Both use real OpenFreeMap San Francisco building footprints and heights, support Light / Dark themes, and preserve the camera when switching.
 
-| Harsh (MT001) | Taste | Dark |
+| Before | After | Dark |
 | --- | --- | --- |
-| ![Harsh](docs/example-harsh.png) | ![Taste](docs/example-taste.png) | ![Dark](docs/example-dark.png) |
+| ![Before](docs/example-harsh.png) | ![After](docs/example-taste.png) | ![After dark](docs/example-dark.png) |
 
 ## Install
 
@@ -72,7 +72,7 @@ Load `skills/maptaste-global/SKILL.md` or `skills/maptaste-cn/SKILL.md` in your 
 
 ## Showcase
 
-A standalone Vite + MapLibre app with a cinematic San Francisco basemap, real building footprints and heights, a 57° pitched camera, and soft sky haze. Taste / Harsh switches sequential blues to a loud rainbow; Light / Dark changes the full map palette. Both preserve your camera.
+A standalone Vite + MapLibre Before / After demo with real San Francisco buildings and a 57° pitched camera. Before pairs a stock Liberty base with categorical Set1 height steps. After opens by default with sequential blues, a paper or void base, restrained lighting, and soft sky haze. Light / Dark works in both modes. Every style switch preserves your camera.
 
 A local snapshot of the public OpenFreeMap Liberty style is adapted in `showcase/src/main.ts`. OpenFreeMap supplies tiles, glyphs, and sprites without an API key; an internet connection and WebGL are required. Map attribution remains visible. Google Fonts supplies Instrument Serif, with a local serif fallback.
 

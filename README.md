@@ -84,7 +84,7 @@ Metadata keys containing `dark`, `theme`, or `styles` count as theme considerati
 
 Type a place or pick a preset in the showcase, or use MCP `preview_place` to open a place directly.
 
-Agents can preview any place with the same Before/After themes using a name or coordinates. Place names may be English, Chinese, or other local proper nouns; optional `lang` shapes the caption language.
+Agents can preview any place with the same Before/After themes using a name or coordinates. Place names may be English, Chinese, or other local proper nouns; optional `lang` shapes the caption language. A small alias table also maps common nicknames (e.g. 魔都 → 上海, 帝都 → 北京) before geocoding.
 
 - https://maptaste.ledring.dev/?place=Tokyo
 - https://maptaste.ledring.dev/?place=上海

@@ -1,5 +1,6 @@
 import { buckets, D1Store, quotaDecision, type D1Database } from './quota';
 import { geocodeAcceptLanguage } from './geocode-lang';
+import { expandPlaceAlias } from './place-aliases';
 
 export interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -27,8 +28,9 @@ export default {
     const keys = await buckets(request.headers.get('CF-Connecting-IP') ?? 'unknown', now);
     const store = new D1Store(env.DB);
     if (path === '/api/geocode') {
-      const q = url.searchParams.get('q')?.trim();
-      if (!q || q.length > 120) return json({ error: 'invalid_query' }, 400);
+      const raw = url.searchParams.get('q')?.trim();
+      if (!raw || raw.length > 120) return json({ error: 'invalid_query' }, 400);
+      const { query: q, alias } = expandPlaceAlias(raw);
       const requests = await store.increment(keys.minute, now.getTime());
       if (requests > Number(env.IP_REQUESTS_PER_MINUTE)) {
         return json({ error: 'rate_limited', retryAfter: keys.retryAfter }, 429, { 'Retry-After': String(keys.retryAfter) });
@@ -54,7 +56,7 @@ export default {
         // Prefer local short name for proper nouns; keep city,country when that is clearer.
         const name = (named && named.length <= 40 ? (short.includes(named) ? short : named) : short) || named || first.display_name;
         const clipped = name.length <= 80 ? name : clean(first.display_name).slice(0, 2).join(', ').slice(0, 80);
-        return json({ ok: true, name: clipped, lat, lng, lang: acceptLanguage.split(',')[0], ...(first.boundingbox ? { bbox: first.boundingbox.map(Number) } : {}) }, 200, { 'Cache-Control': 'public, max-age=86400' });
+        return json({ ok: true, name: clipped, lat, lng, lang: acceptLanguage.split(',')[0], ...(alias ? { alias, resolvedAs: q } : {}), ...(first.boundingbox ? { bbox: first.boundingbox.map(Number) } : {}) }, 200, { 'Cache-Control': 'public, max-age=86400' });
       } catch { return json({ error: 'upstream_failed' }, 502); }
     }
     const globalLimit = Number(env.GLOBAL_DAILY_SESSIONS);

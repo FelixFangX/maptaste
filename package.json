@@ -1,0 +1,64 @@
+{
+  "name": "maptaste",
+  "version": "0.0.1",
+  "description": "Map taste for coding agents: MapLibre style check + skill packs (global/cn) + MCP server + showcase.",
+  "author": "Felix Fang (https://github.com/FelixFangX)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "maptaste": "dist/cli.js",
+    "maptaste-mcp": "dist/mcp/server.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm build"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "@types/node": "^20.19.0",
+    "vitest": "~3.2.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FelixFangX/maptaste.git"
+  },
+  "homepage": "https://github.com/FelixFangX/maptaste#readme",
+  "bugs": {
+    "url": "https://github.com/FelixFangX/maptaste/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "map",
+    "lint",
+    "linter",
+    "gis",
+    "agent-skills",
+    "mcp",
+    "cli"
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

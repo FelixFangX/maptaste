@@ -1,0 +1,56 @@
+{
+  "version": 8,
+  "metadata": {
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {},
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#ebe7df"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#dce6f2",
+          1,
+          "#9eb6d4",
+          2,
+          "#1a2a4a"
+        ]
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 14
+      },
+      "paint": {
+        "text-color": "#1a2a4a",
+        "text-halo-color": "#ebe7df",
+        "text-halo-width": 1.5
+      }
+    }
+  ]
+}

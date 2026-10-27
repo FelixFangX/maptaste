@@ -1,0 +1,162 @@
+{
+  "version": 8,
+  "sources": {},
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#ffffff"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#ff0000",
+          1,
+          "#ffff00",
+          2,
+          "#00ff00",
+          3,
+          "#00ffff",
+          4,
+          "#0000ff",
+          5,
+          "#ff00ff"
+        ]
+      }
+    },
+    {
+      "id": "place-0",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-1",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-2",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-3",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-4",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-5",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-6",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-7",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-8",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    },
+    {
+      "id": "place-9",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 25
+      },
+      "paint": {
+        "text-color": "#bbbbbb"
+      }
+    }
+  ]
+}

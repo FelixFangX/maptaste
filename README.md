@@ -84,6 +84,8 @@ Metadata keys containing `dark`, `theme`, or `styles` count as theme considerati
 
 A Vite + MapLibre demo on real OpenFreeMap San Francisco buildings at pitch 57°. Before pairs stock Liberty with categorical Set1 height steps. After opens by default with sequential blues, a paper or void base, and Light / Dark paint-only toggles that keep the camera.
 
+Live: [maptaste.ledring.dev](https://maptaste.ledring.dev) (daily per-IP session quota).
+
 ```sh
 cd showcase
 pnpm install

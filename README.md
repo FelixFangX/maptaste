@@ -10,7 +10,7 @@ Agents ship ugly MapLibre styles: rainbow fills, faint labels, crowded names, an
 
 ![Maptaste demo](docs/demo.gif)
 
-From rainbow noise to sequential blues — Taste / Harsh and Light / Dark.
+3D extruded cells: rainbow noise → sequential blues — Taste / Harsh and Light / Dark.
 
 | Harsh (MT001) | Taste | Dark |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ Load `skills/maptaste-global/SKILL.md` or `skills/maptaste-cn/SKILL.md` in your 
 
 ## Showcase
 
-A standalone Vite app with local GeoJSON, a Taste/Harsh palette toggle, and light/dark themes. No map token or tile service required; WebGL is required. Google Fonts supplies the single serif headline, with a local serif fallback.
+A standalone Vite app with local GeoJSON, MapLibre fill-extrusion (pitch ~55°), a Taste/Harsh palette toggle, and light/dark themes. No map token or tile service required; WebGL is required. Google Fonts supplies the single serif headline, with a local serif fallback.
 
 ```sh
 cd showcase

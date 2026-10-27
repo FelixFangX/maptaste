@@ -157,18 +157,46 @@ let before = params.get('mode') === 'before';
 let applied = initial;
 let ready = false;
 let map: maplibregl.Map;
-async function resolvePlace() {
+const placeInput = document.querySelector<HTMLInputElement>('#place')!;
+placeInput.value = params.get('place') || '';
+let sessionGranted = false;
+let resolution = 0;
+type Place = { center: [number, number]; name: string; query: string | null };
+let pendingPlace: Place | undefined;
+let statusTimer: ReturnType<typeof setTimeout> | undefined;
+let placeError = false;
+function showPlaceError(error: unknown) {
+  clearTimeout(statusTimer);
+  placeError = true;
+  status.hidden = false;
+  status.textContent = error instanceof Error ? error.message : 'Could not resolve place.';
+  statusTimer = setTimeout(() => { placeError = false; status.hidden = true; }, 4000);
+}
+function applyPlace(place: Place) {
+  document.querySelector('.place-title')!.textContent = place.name;
+  document.querySelector('#place-coords')!.textContent = `${Math.abs(place.center[1]).toFixed(4)}° ${place.center[1] < 0 ? 'S' : 'N'} / ${Math.abs(place.center[0]).toFixed(4)}° ${place.center[0] < 0 ? 'W' : 'E'}`;
+  document.querySelector<HTMLElement>('.place-caption')!.hidden = false;
+  document.querySelector('.map-shell')!.setAttribute('aria-label', `Interactive ${place.name} building map`);
+  placeInput.value = place.query || place.name;
+}
+function updateUrl() {
+  const url = new URL(location.href);
+  url.search = params.toString();
+  history.replaceState(null, '', url);
+}
+async function resolvePlace(source: URLSearchParams = params, live = false) {
+  const request = ++resolution;
   try {
     let center: [number, number] = [-122.4024, 37.7947];
-    let name = params.get('place')?.trim() || 'San Francisco';
-    if (params.has('ll')) {
-      const parts = params.get('ll')!.split(',');
+    let name = source.get('place')?.trim() || 'San Francisco';
+    if (source.has('ll')) {
+      const parts = source.get('ll')!.split(',');
       const values = parts.map(Number);
       if (parts.length !== 2 || parts.some(part => !part.trim()) || !values.every(Number.isFinite) || Math.abs(values[0]) > 180 || Math.abs(values[1]) > 90) throw new Error('Invalid coordinates.');
       center = [values[0], values[1]];
-      if (!params.get('place')?.trim()) name = 'Selected place';
-    } else if (params.has('place')) {
-      const response = await fetch(`/api/geocode?${new URLSearchParams({ q: params.get('place')!.trim() })}`);
+      if (!source.get('place')?.trim()) name = 'Selected place';
+    } else if (source.has('place')) {
+      const response = await fetch(`/api/geocode?${new URLSearchParams({ q: source.get('place')!.trim() })}`);
       if (!response.ok) throw new Error(response.status === 404 ? 'Place not found.' : 'Could not resolve place. Try again.');
       const result = await response.json();
       if (result.ok !== true || !Number.isFinite(result.lng) || !Number.isFinite(result.lat) || Math.abs(result.lng) > 180 || Math.abs(result.lat) > 90 || typeof result.name !== 'string') throw new Error('Could not resolve place.');
@@ -181,15 +209,48 @@ async function resolvePlace() {
       return value;
     };
     const camera = { center, zoom: number('z', 15.4, 0, 24), pitch: number('pitch', 57, 0, 70), bearing: number('bearing', -32, -360, 360) };
-    document.querySelector('.place-title')!.textContent = name;
-    document.querySelector('#place-coords')!.textContent = `${Math.abs(center[1]).toFixed(4)}° ${center[1] < 0 ? 'S' : 'N'} / ${Math.abs(center[0]).toFixed(4)}° ${center[0] < 0 ? 'W' : 'E'}`;
-    document.querySelector('.map-shell')!.setAttribute('aria-label', `Interactive ${name} building map`);
-    startMap(camera);
+    if (request !== resolution) return;
+    const place = { center, name, query: source.get('place')?.trim() || null };
+    clearTimeout(statusTimer);
+    placeError = false;
+    status.hidden = true;
+    if (live) {
+      params.set('place', place.query || name);
+      params.delete('ll');
+      updateUrl();
+    }
+    if (!map) {
+      applyPlace(place);
+      startMap(camera);
+    } else if (ready) {
+      applyPlace(place);
+      map.jumpTo({ center });
+    } else {
+      pendingPlace = place;
+    }
   } catch (error) {
-    status.hidden = false;
-    status.textContent = error instanceof Error ? error.message : 'Could not resolve place.';
+    if (request === resolution) showPlaceError(error);
   }
 }
+function choosePlace(value: string) {
+  const query = value.trim();
+  if (!query) return;
+  if (!sessionGranted) {
+    params.set('place', query);
+    params.delete('ll');
+    updateUrl();
+    return;
+  }
+  void resolvePlace(new URLSearchParams({ place: query }), true);
+}
+document.querySelector('#place-control')!.addEventListener('submit', event => {
+  event.preventDefault();
+  choosePlace(placeInput.value);
+});
+document.querySelectorAll<HTMLButtonElement>('[data-place]').forEach(button => {
+  button.addEventListener('click', () => choosePlace(button.dataset.place!));
+});
+
 function startMap(camera: { center: [number, number]; zoom: number; pitch: number; bearing: number }) {
   map = new maplibregl.Map({
     container: 'map', style: baseStyle,
@@ -201,12 +262,20 @@ function startMap(camera: { center: [number, number]; zoom: number; pitch: numbe
     attributionControl: { compact: true },
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
-  map.once('load', () => { ready = true; updateStyle(); });
+  map.once('load', () => {
+    ready = true;
+    if (pendingPlace) {
+      applyPlace(pendingPlace);
+      map.jumpTo({ center: pendingPlace.center });
+      pendingPlace = undefined;
+    }
+    updateStyle();
+  });
   map.on('error', () => {
     status.hidden = false;
     status.textContent = 'Map could not load. Check your connection and WebGL support.';
   });
-  map.on('idle', () => { status.hidden = true; });
+  map.on('idle', () => { if (!placeError) status.hidden = true; });
 }
 function updateStyle() {
   if (!ready) return;
@@ -226,6 +295,8 @@ theme.addEventListener('click', () => {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   theme.textContent = dark ? 'Light' : 'Dark';
   theme.setAttribute('aria-pressed', String(dark));
+  params.set('theme', dark ? 'dark' : 'light');
+  updateUrl();
   updateStyle();
 });
 const modeButtons = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
@@ -233,6 +304,8 @@ modeButtons.forEach(button => button.addEventListener('click', () => {
   const nextBefore = button.dataset.mode === 'before';
   if (before === nextBefore) return;
   before = nextBefore;
+  params.set('mode', before ? 'before' : 'after');
+  updateUrl();
   modeButtons.forEach(control => {
     control.setAttribute('aria-pressed', String((control.dataset.mode === 'before') === before));
   });
@@ -245,16 +318,16 @@ async function beginSession() {
   try {
     response = await fetch('/api/session', { method: 'POST' });
   } catch {
-    if (localDev) { await resolvePlace(); return; }
+    if (localDev) { sessionGranted = true; await resolvePlace(); return; }
     status.hidden = false;
     status.textContent = 'Could not connect. Check your connection and try again.';
     return;
   }
-  if (localDev && response.status === 404) { await resolvePlace(); return; }
+  if (localDev && response.status === 404) { sessionGranted = true; await resolvePlace(); return; }
   if (response.ok) {
     try {
       const session = await response.json();
-      if (session.ok === true) { await resolvePlace(); return; }
+      if (session.ok === true) { sessionGranted = true; await resolvePlace(); return; }
     } catch { /* A non-API response must not start the hosted map. */ }
   }
   status.hidden = false;

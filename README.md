@@ -82,6 +82,8 @@ Metadata keys containing `dark`, `theme`, or `styles` count as theme considerati
 
 ## Showcase
 
+Type a place or pick a preset in the showcase, or use MCP `preview_place` to open a place directly.
+
 Agents can preview any place with the same Before/After themes using a name or coordinates:
 
 - https://maptaste.ledring.dev/?place=Tokyo

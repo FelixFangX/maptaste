@@ -12,7 +12,17 @@
   <div id="app">
     <header>
       <a href="https://github.com/FelixFangX" class="brand">maptaste<span> / 001</span></a>
-      <div class="controls" role="group" aria-label="Map appearance">
+      <div class="controls" role="group" aria-label="Map controls">
+        <form id="place-control" class="place-control" role="search">
+          <input id="place" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" aria-label="Place" placeholder="Place">
+          <div class="place-presets">
+            <button type="button" data-place="San Francisco">San Francisco</button>
+            <button type="button" data-place="Tokyo">Tokyo</button>
+            <button type="button" data-place="Shanghai">Shanghai</button>
+            <button type="button" data-place="London">London</button>
+            <button type="button" data-place="Paris">Paris</button>
+          </div>
+        </form>
         <div class="mode-control" role="group" aria-label="Before and after">
           <button type="button" data-mode="before" aria-pressed="false">Before</button>
           <button type="button" data-mode="after" aria-pressed="true">After</button>
@@ -22,10 +32,10 @@
     </header>
     <main>
       <div class="intro"><h1>A sense of <em>place.</em></h1></div>
-      <section class="map-shell" aria-label="Interactive San Francisco building map">
+      <section class="map-shell" aria-label="Interactive building map">
         <div id="map"></div>
         <p id="map-status" role="status" hidden></p>
-        <div class="place-caption"><span class="place-title">San Francisco</span><span id="place-coords">37.7947° N / 122.4024° W</span></div>
+        <div class="place-caption" hidden><span class="place-title"></span><span id="place-coords"></span></div>
       </section>
       <footer><span>A little perspective changes everything.</span><span>Built with MapLibre</span></footer>
     </main>

@@ -1,0 +1,56 @@
+{
+  "name": "maptaste",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "maptaste.ledring.dev",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./showcase/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "maptaste",
+      "database_id": "ec2686f8-a443-4973-92d5-90bda659a2b2",
+      "migrations_dir": "worker/migrations"
+    }
+  ],
+  "vars": {
+    "GLOBAL_DAILY_SESSIONS": "5000",
+    "IP_DAILY_SESSIONS": "20",
+    "IP_REQUESTS_PER_MINUTE": "10"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "preview": {
+      "name": "maptaste-preview",
+      "workers_dev": true,
+      "routes": [],
+      "vars": {
+        "GLOBAL_DAILY_SESSIONS": "5000",
+        "IP_DAILY_SESSIONS": "20",
+        "IP_REQUESTS_PER_MINUTE": "10"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "maptaste",
+          "database_id": "ec2686f8-a443-4973-92d5-90bda659a2b2",
+          "migrations_dir": "worker/migrations"
+        }
+      ]
+    }
+  }
+}

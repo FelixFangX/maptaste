@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import maplibregl, { type ExpressionSpecification, type StyleSpecification } from 'maplibre-gl';
 import liberty from './liberty.json';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -154,16 +155,25 @@ let dark = false;
 let before = false;
 let applied = initial;
 let ready = false;
-const map = new maplibregl.Map({
-  container: 'map', style: baseStyle,
-  center: [-122.4024, 37.7947], zoom: 15.4, pitch: 57, bearing: -32,
-  fadeDuration: 0, renderWorldCopies: false, refreshExpiredTiles: false,
-  pixelRatio: Math.min(window.devicePixelRatio, 1.5),
-  // Keep edge antialiasing; the DPR cap bounds its framebuffer cost.
-  maxPitch: 70, canvasContextAttributes: { antialias: true },
-  attributionControl: { compact: true },
-});
-map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+let map: maplibregl.Map;
+function startMap() {
+  map = new maplibregl.Map({
+    container: 'map', style: baseStyle,
+    center: [-122.4024, 37.7947], zoom: 15.4, pitch: 57, bearing: -32,
+    fadeDuration: 0, renderWorldCopies: false, refreshExpiredTiles: false,
+    pixelRatio: Math.min(window.devicePixelRatio, 1.5),
+    // Keep edge antialiasing; the DPR cap bounds its framebuffer cost.
+    maxPitch: 70, canvasContextAttributes: { antialias: true },
+    attributionControl: { compact: true },
+  });
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+  map.once('load', () => { ready = true; updateStyle(); });
+  map.on('error', () => {
+    status.hidden = false;
+    status.textContent = 'Map could not load. Check your connection and WebGL support.';
+  });
+  map.on('idle', () => { status.hidden = true; });
+}
 function updateStyle() {
   if (!ready) return;
   const next = before ? themes.before : dark ? themes.dark : themes.light;
@@ -176,7 +186,6 @@ function updateStyle() {
   map.setLight(next.light);
   applied = next;
 }
-map.once('load', () => { ready = true; updateStyle(); });
 const theme = document.querySelector<HTMLButtonElement>('#theme')!;
 theme.addEventListener('click', () => {
   dark = !dark;
@@ -196,8 +205,27 @@ modeButtons.forEach(button => button.addEventListener('click', () => {
   updateStyle();
 }));
 const status = document.querySelector<HTMLElement>('#map-status')!;
-map.on('error', () => {
+const localDev = import.meta.env.DEV && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+async function beginSession() {
+  let response: Response;
+  try {
+    response = await fetch('/api/session', { method: 'POST' });
+  } catch {
+    if (localDev) { startMap(); return; }
+    status.hidden = false;
+    status.textContent = 'Could not connect. Check your connection and try again.';
+    return;
+  }
+  if (localDev && response.status === 404) { startMap(); return; }
+  if (response.ok) {
+    try {
+      const session = await response.json();
+      if (session.ok === true) { startMap(); return; }
+    } catch { /* A non-API response must not start the hosted map. */ }
+  }
   status.hidden = false;
-  status.textContent = 'Map could not load. Check your connection and WebGL support.';
-});
-map.on('idle', () => { status.hidden = true; });
+  status.textContent = response.status === 429
+    ? 'Daily demo limit reached. Try again after UTC reset.'
+    : 'Could not start the demo. Check your connection and try again.';
+}
+void beginSession();

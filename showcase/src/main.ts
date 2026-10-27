@@ -198,7 +198,8 @@ async function resolvePlace(source: URLSearchParams = params, live = false) {
     } else if (source.has('place')) {
       const query = source.get('place')!.trim();
       const geocode = new URLSearchParams({ q: query });
-      const lang = source.get('lang')?.trim() || document.documentElement.lang || navigator.language || '';
+      // Only an explicit ?lang= overrides script detection; do not forward <html lang>.
+      const lang = source.get('lang')?.trim();
       if (lang) geocode.set('lang', lang.split(',')[0]!);
       const response = await fetch(`/api/geocode?${geocode}`);
       if (!response.ok) throw new Error(response.status === 404 ? 'Place not found.' : 'Could not resolve place. Try again.');

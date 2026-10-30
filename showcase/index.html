@@ -3,15 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f7f8f6">
+  <meta name="theme-color" content="#f4f5f7">
   <title>maptaste — A sense of place.</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap" rel="stylesheet">
 </head>
 <body>
+  <a class="skip" href="#main">Skip to content</a>
   <div id="app">
     <header>
-      <a href="https://github.com/FelixFangX" class="brand">maptaste<span> / 001</span></a>
+      <a href="https://ledring.dev/" class="brand">MapTaste</a>
+      <nav aria-label="LEDRING family">
+        <a href="https://ledring.dev/tools/">Tools</a>
+        <a href="https://ledring.dev/projects/">Projects</a>
+        <a href="https://ledring.dev/notes/">Notes</a>
+        <a href="https://ledring.dev/">Home ↗</a>
+        <button id="theme" type="button" aria-label="Dark theme" aria-pressed="false">Dark</button>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="title">
+        <div>
+          <p class="eyebrow">MapTaste</p>
+          <h1 id="title">Give your agent<br>a taste for maps.</h1>
+          <p class="lead">MapLibre style references. Compare a direction you can see, then bring it into your agent workflow.</p>
+          <a class="btn" href="#showcase"><span class="led" aria-hidden="true"></span>Try the showcase<span aria-hidden="true">↗</span></a>
+        </div>
+        <figure class="panel">
+          <svg viewBox="0 0 520 400" role="img" aria-label="Illustrative map style specimen with MT001 to MT004 and a zero to one hundred scoring scale"><rect width="520" height="400" fill="#d9d2c3"/><path d="M330 0 C220 80 370 120 260 210 S160 300 220 400" fill="none" stroke="#8fa5d8" stroke-width="72"/><g stroke="#efe9dc" stroke-width="12" fill="none"><path d="M-20 96L540 300M-20 270L490 64M60 0L440 400M170 0L50 400M470 0L330 400"/></g><g stroke="#b9b29f" stroke-width="2" fill="none"><path d="M0 48L520 240M0 320L520 112M105 0L485 400M220 0L100 400"/></g><g fill="#2F5BEA"><circle cx="180" cy="168" r="8"/><circle cx="369" cy="250" r="8"/></g><rect x="24" y="24" width="136" height="40" rx="8" fill="#f4f5f7"/><text x="40" y="50" font-size="14" fill="#263c48">MT001–MT004</text><rect x="344" y="304" width="152" height="72" rx="8" fill="#263c48"/><text x="360" y="332" font-size="12" fill="#b5c6cf">TASTE SCORE SCALE</text><text x="360" y="360" font-size="24" fill="#f4f5f7">0 — 100</text></svg>
+          <figcaption>MapLibre style study</figcaption>
+        </figure>
+      </section>
+      <section id="showcase" aria-labelledby="showcase-title">
+        <div class="showcase-heading">
+          <h2 id="showcase-title">A shared reference for map style.</h2>
       <div class="controls" role="group" aria-label="Map controls">
         <form id="place-control" class="place-control" role="search">
           <input id="place" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" maxlength="120" aria-label="Place" placeholder="Place / 地点" lang="und">
@@ -28,15 +51,13 @@
           <button type="button" data-mode="before" aria-pressed="false">Before</button>
           <button type="button" data-mode="after" aria-pressed="true">After</button>
         </div>
-        <button id="theme" type="button" aria-label="Dark theme" aria-pressed="false">Dark</button>
       </div>
-    </header>
-    <main>
-      <div class="intro"><h1>A sense of place.</h1></div>
+        </div>
       <section class="map-shell" aria-label="Interactive building map">
         <div id="map"></div>
         <p id="map-status" role="status" hidden></p>
         <div class="place-caption" hidden><span class="place-title"></span><span id="place-coords"></span></div>
+      </section>
       </section>
       <footer><span>A little perspective changes everything.</span><span>Built with MapLibre</span></footer>
     </main>

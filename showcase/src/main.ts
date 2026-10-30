@@ -159,6 +159,28 @@ let ready = false;
 let map: maplibregl.Map;
 const placeInput = document.querySelector<HTMLInputElement>('#place')!;
 placeInput.value = params.get('place') || '';
+const status = document.querySelector<HTMLElement>('#map-status')!;
+const uiCopy = {
+  en: { place: 'Place', missing: 'Missing', failed: 'Failed', limited: 'Limited' },
+  zh: { place: '地点', missing: '未找到', failed: '失败', limited: '限额' },
+};
+type Status = 'missing' | 'failed' | 'limited';
+let currentStatus: Status | undefined;
+function updateLanguage() {
+  const language = document.documentElement.lang.trim() || navigator.language;
+  const copy = uiCopy[/^zh(?:-|$)/i.test(language) ? 'zh' : 'en'];
+  placeInput.placeholder = copy.place;
+  placeInput.setAttribute('aria-label', copy.place);
+  if (currentStatus) status.textContent = copy[currentStatus];
+}
+function showStatus(value: Status) {
+  currentStatus = value;
+  status.hidden = false;
+  updateLanguage();
+}
+new MutationObserver(updateLanguage).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+window.addEventListener('languagechange', updateLanguage);
+updateLanguage();
 let sessionGranted = false;
 let resolution = 0;
 type Place = { center: [number, number]; name: string; query: string | null };
@@ -168,8 +190,7 @@ let placeError = false;
 function showPlaceError(error: unknown) {
   clearTimeout(statusTimer);
   placeError = true;
-  status.hidden = false;
-  status.textContent = error instanceof Error ? error.message : 'Could not resolve place.';
+  showStatus(error instanceof Error && error.message === 'Missing' ? 'missing' : 'failed');
   statusTimer = setTimeout(() => { placeError = false; status.hidden = true; }, 4000);
 }
 function applyPlace(place: Place) {
@@ -202,7 +223,7 @@ async function resolvePlace(source: URLSearchParams = params, live = false) {
       const lang = source.get('lang')?.trim();
       if (lang) geocode.set('lang', lang.split(',')[0]!);
       const response = await fetch(`/api/geocode?${geocode}`);
-      if (!response.ok) throw new Error(response.status === 404 ? 'Place not found.' : 'Could not resolve place. Try again.');
+      if (!response.ok) throw new Error(response.status === 404 ? 'Missing' : 'Failed');
       const result = await response.json();
       if (result.ok !== true || !Number.isFinite(result.lng) || !Number.isFinite(result.lat) || Math.abs(result.lng) > 180 || Math.abs(result.lat) > 90 || typeof result.name !== 'string') throw new Error('Could not resolve place.');
       center = [result.lng, result.lat]; name = result.name;
@@ -277,8 +298,7 @@ function startMap(camera: { center: [number, number]; zoom: number; pitch: numbe
     updateStyle();
   });
   map.on('error', () => {
-    status.hidden = false;
-    status.textContent = 'Map could not load. Check your connection and WebGL support.';
+    showStatus('failed');
   });
   map.on('idle', () => { if (!placeError) status.hidden = true; });
 }
@@ -316,7 +336,6 @@ modeButtons.forEach(button => button.addEventListener('click', () => {
   });
   updateStyle();
 }));
-const status = document.querySelector<HTMLElement>('#map-status')!;
 const localDev = import.meta.env.DEV && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 async function beginSession() {
   let response: Response;
@@ -324,8 +343,7 @@ async function beginSession() {
     response = await fetch('/api/session', { method: 'POST' });
   } catch {
     if (localDev) { sessionGranted = true; await resolvePlace(); return; }
-    status.hidden = false;
-    status.textContent = 'Could not connect. Check your connection and try again.';
+    showStatus('failed');
     return;
   }
   if (localDev && response.status === 404) { sessionGranted = true; await resolvePlace(); return; }
@@ -335,10 +353,7 @@ async function beginSession() {
       if (session.ok === true) { sessionGranted = true; await resolvePlace(); return; }
     } catch { /* A non-API response must not start the hosted map. */ }
   }
-  status.hidden = false;
-  status.textContent = response.status === 429
-    ? 'Daily demo limit reached. Try again after UTC reset.'
-    : 'Could not start the demo. Check your connection and try again.';
+  showStatus(response.status === 429 ? 'limited' : 'failed');
 }
 document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 theme.textContent = dark ? 'Light' : 'Dark';

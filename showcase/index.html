@@ -11,10 +11,10 @@
 <body>
   <div id="app">
     <header>
-      <a href="https://github.com/FelixFangX" class="brand">maptaste<span> / 001</span></a>
+      <a href="https://github.com/FelixFangX/maptaste" class="brand">maptaste<span> / 001</span></a>
       <div class="controls" role="group" aria-label="Map controls">
         <form id="place-control" class="place-control" role="search">
-          <input id="place" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" maxlength="120" aria-label="Place" placeholder="Place / 地点" lang="und">
+          <input id="place" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" maxlength="120" aria-label="Place" placeholder="Place">
           <div class="place-presets">
             <button type="button" data-place="San Francisco">San Francisco</button>
             <button type="button" data-place="Tokyo">Tokyo</button>
@@ -32,13 +32,11 @@
       </div>
     </header>
     <main>
-      <div class="intro"><h1>A sense of <em>place.</em></h1></div>
       <section class="map-shell" aria-label="Interactive building map">
         <div id="map"></div>
         <p id="map-status" role="status" hidden></p>
         <div class="place-caption" hidden><span class="place-title"></span><span id="place-coords"></span></div>
       </section>
-      <footer><span>A little perspective changes everything.</span><span>Built with MapLibre</span></footer>
     </main>
   </div>
   <script type="module" src="/src/main.ts"></script>

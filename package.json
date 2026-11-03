@@ -1,7 +1,7 @@
 {
   "name": "maptaste",
   "version": "0.0.1",
-  "description": "Map taste for coding agents: MapLibre style check + skill packs (global/cn) + MCP server + showcase.",
+  "description": "Stop agents shipping rainbow MapLibre choropleths.",
   "author": "Felix Fang (https://github.com/FelixFangX)",
   "license": "MIT",
   "type": "module",

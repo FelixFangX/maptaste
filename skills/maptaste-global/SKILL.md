@@ -1,15 +1,13 @@
 ---
 name: maptaste-global
-description: Build restrained MapLibre styles for the global audience and check map taste.
+description: Build an ink-paper MapLibre style. --pack global is the alias for the ink-paper taste.
 ---
 
-1. Pick the `global` pack (`--pack global`).
-2. Read tokens: paper `#ebe7df`, void `#0b0b0b`, light accent navy `#1a2a4a`, dark accent pale blue `#9eb6d4`. Avoid red brand accents.
-3. Build MapLibre style JSON. Use sequential color for ordered data, clear label hierarchy, and light/dark variants declared in metadata.
-4. Run `npx maptaste check style.json --pack global`. Review findings and inspect the map at multiple zoom levels.
+This skill selects the `ink-paper` taste. `--pack global` is the alias. For the full catalog, follow `maptaste` and run `npx maptaste tastes`.
 
-Rules: MT001 rainbow choropleth (error), MT002 label contrast (warn), MT003 dark-mode consideration (info), MT004 label density (warn).
+1. Read `npx maptaste tokens --taste ink-paper`.
+2. Flat plate. Hairline roads, no casings, roman labels (not bold, not italic), paper ground, at most eight text layers, at most six line layers, at most two line hues. Lightness moves one way. Do not extrude the city, do not use a night ground, and do not draw a route diagram here.
+3. Build MapLibre style JSON. Declare light and dark variants in metadata.
+4. Run `npx maptaste check style.json --taste ink-paper`. `--pack global` checks the same taste.
 
-Prioritize place names by zoom; avoid competing labels and oversized default text.
-
-Layout explains itself. Avoid helper-label spam. These checks are heuristics, not full schema validation or a substitute for visual review.
+Rules include MT001 rainbow choropleth (error) plus the ink-paper caps from `maptaste tokens`. Prioritize place names by zoom. Leave helper labels out. These checks are heuristics, not schema validation or a substitute for looking at the map.

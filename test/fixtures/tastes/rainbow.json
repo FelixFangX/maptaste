@@ -1,0 +1,72 @@
+{
+  "version": 8,
+  "name": "Rainbow choropleth",
+  "metadata": {
+    "maptaste:specimen": "rainbow",
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {
+    "areas": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f7f8f6"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#d53e4f",
+          1,
+          "#fc8d59",
+          2,
+          "#fee08b",
+          3,
+          "#abdda4",
+          4,
+          "#66c2a5",
+          5,
+          "#3288bd"
+        ]
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 14
+      },
+      "paint": {
+        "text-color": "#1a2a4a",
+        "text-halo-color": "#f7f8f6",
+        "text-halo-width": 1.25
+      }
+    }
+  ]
+}

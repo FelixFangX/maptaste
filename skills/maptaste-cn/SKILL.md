@@ -1,15 +1,13 @@
 ---
 name: maptaste-cn
-description: Build restrained MapLibre styles for the cn audience and check map taste.
+description: Build a cn-metro MapLibre style for a Chinese city or transit map. --pack cn is the alias for the cn-metro taste.
 ---
 
-1. Pick the `cn` pack (`--pack cn`).
-2. Read tokens: paper `#ebe7df`, void `#0b0b0b`, light accent navy `#1a2a4a`, dark accent pale blue `#9eb6d4`. Avoid red brand accents.
-3. Build MapLibre style JSON. Use sequential color for ordered data, clear label hierarchy, and light/dark variants declared in metadata.
-4. Run `npx maptaste check style.json --pack cn`. Review findings and inspect the map at multiple zoom levels.
+This skill selects the `cn-metro` taste. `--pack cn` is the alias. For the full catalog, follow `maptaste` and run `npx maptaste tastes`.
 
-Rules: MT001 rainbow choropleth (error), MT002 label contrast (warn), MT003 dark-mode consideration (info), MT004 label density (warn).
+1. Read `npx maptaste tokens --taste cn-metro`.
+2. Transit plate. Keep the routes and hide the minor streets. Bold admin labels (行政区), paper ground, at most six text layers, sequential fills for data, route lines that may use several hues. Strokes may be heavier than ink-paper. Do not build this as a flat print atlas with roman hairlines.
+3. Build MapLibre style JSON. Declare light and dark variants in metadata.
+4. Run `npx maptaste check style.json --taste cn-metro`. `--pack cn` checks the same taste.
 
-For Chinese maps, prioritize administrative labels (行政区标注密度) by zoom and rank; keep 配色 restrained. The cn pack flags more than six text symbol layers.
-
-Layout explains itself. Avoid helper-label spam. These checks are heuristics, not full schema validation or a substitute for visual review.
+The cn-metro cap is six text layers, stricter than ink-paper's eight. These checks are heuristics, not schema validation or a substitute for looking at the map.

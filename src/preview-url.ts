@@ -1,3 +1,5 @@
+import { isTaste } from './tastes.js';
+
 export interface PreviewArgs {
   place?: string;
   lang?: string;
@@ -5,10 +7,11 @@ export interface PreviewArgs {
   zoom?: number;
   mode?: 'before' | 'after';
   theme?: 'light' | 'dark';
+  taste?: string;
 }
 
 export function buildPreviewUrl(args: PreviewArgs) {
-  const allowed = ['place', 'll', 'zoom', 'mode', 'theme', 'lang'];
+  const allowed = ['place', 'll', 'zoom', 'mode', 'theme', 'lang', 'taste'];
   if (Object.keys(args).some(key => !allowed.includes(key))) throw new Error('Unknown preview argument');
   if (args.place !== undefined && (typeof args.place !== 'string' || !args.place.trim() || args.place.trim().length > 120)) throw new Error('place must contain 1–120 characters');
   if (args.ll !== undefined && typeof args.ll !== 'string') throw new Error('ll must be lng,lat');
@@ -24,6 +27,7 @@ export function buildPreviewUrl(args: PreviewArgs) {
   if (typeof zoom !== 'number' || !Number.isFinite(zoom) || zoom < 0 || zoom > 24) throw new Error('Invalid zoom');
   if (args.mode !== undefined && !['before', 'after'].includes(args.mode)) throw new Error('Invalid mode');
   if (args.theme !== undefined && !['light', 'dark'].includes(args.theme)) throw new Error('Invalid theme');
+  if (args.taste !== undefined && (typeof args.taste !== 'string' || !isTaste(args.taste))) throw new Error('Invalid taste');
   const url = new URL('https://maptaste.ledring.dev/');
   if (center) url.searchParams.set('ll', center.join(','));
   if (args.place) url.searchParams.set('place', args.place.trim());
@@ -31,6 +35,7 @@ export function buildPreviewUrl(args: PreviewArgs) {
   if (args.mode) url.searchParams.set('mode', args.mode);
   if (args.theme) url.searchParams.set('theme', args.theme);
   if (args.lang) url.searchParams.set('lang', args.lang.trim());
+  if (args.taste) url.searchParams.set('taste', args.taste);
   return { url: url.toString(), center, zoom, pitch: 57, bearing: -32,
     ...(args.place ? { name: args.place.trim() } : {}),
     how: 'Open the URL or embed; session quota still applies on first interactive load' };

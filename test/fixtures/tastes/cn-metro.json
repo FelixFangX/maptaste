@@ -1,0 +1,158 @@
+{
+  "version": 8,
+  "name": "CN metro",
+  "metadata": {
+    "maptaste:taste": "cn-metro",
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {
+    "areas": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f4f1ea"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#f6f1e8",
+          1,
+          "#d2b8a2",
+          2,
+          "#b48b72",
+          3,
+          "#4a342c"
+        ]
+      }
+    },
+    {
+      "id": "route-0",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#d23a3a",
+        "line-width": 2.2
+      }
+    },
+    {
+      "id": "route-1",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#2a6fdb",
+        "line-width": 2.2
+      }
+    },
+    {
+      "id": "route-2",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#1f8a4c",
+        "line-width": 2.2
+      }
+    },
+    {
+      "id": "route-3",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#d4a017",
+        "line-width": 2.2
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 15
+      },
+      "paint": {
+        "text-color": "#1a1a1a",
+        "text-halo-color": "#f4f1ea",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-1",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 15
+      },
+      "paint": {
+        "text-color": "#1a1a1a",
+        "text-halo-color": "#f4f1ea",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-2",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 15
+      },
+      "paint": {
+        "text-color": "#1a1a1a",
+        "text-halo-color": "#f4f1ea",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-3",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 15
+      },
+      "paint": {
+        "text-color": "#1a1a1a",
+        "text-halo-color": "#f4f1ea",
+        "text-halo-width": 1.25
+      }
+    }
+  ]
+}

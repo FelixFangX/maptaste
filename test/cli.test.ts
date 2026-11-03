@@ -1,5 +1,7 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, it } from 'vitest';
 it('returns correct CLI exit codes and JSON', async () => {
  execFileSync('pnpm',['build']);
@@ -16,6 +18,29 @@ it('returns correct CLI exit codes and JSON', async () => {
  expect(run(['check','test/fixtures/good-style.json']).status).toBe(0);
  expect(run(['check','missing.json']).status).toBe(2);
  expect(run(['check','test/fixtures/good-style.json','--pack','invalid']).status).toBe(2);
+ expect(run(['check','test/fixtures/good-style.json','--taste','nope']).status).toBe(2);
+ expect(run(['check','test/fixtures/good-style.json','--pack','global','--taste','cn-metro']).status).toBe(2);
+ const tastes = run(['tastes']);
+ expect(tastes.status).toBe(0);
+ for (const name of ['ink-paper', 'night-ops', 'civic', 'editorial', 'cn-metro', 'terrain-quiet']) expect(tastes.stdout).toContain(name);
+ const tokens = run(['tokens','--taste','editorial','--format','json']);
+ expect(tokens.status).toBe(0);
+ expect(JSON.parse(tokens.stdout).id).toBe('editorial');
+ expect(JSON.parse(tokens.stdout).rules).toContain('3 text layers');
+ const example = run(['example','--taste','night-ops']);
+ expect(example.status).toBe(0);
+ expect(JSON.parse(example.stdout).metadata['maptaste:taste']).toBe('night-ops');
+ const out = mkdtempSync(join(tmpdir(), 'maptaste-apply-'));
+ const applied = run(['apply','--taste','editorial','--out', out]);
+ expect(applied.status).toBe(0);
+ expect(JSON.parse(readFileSync(join(out, 'editorial.tokens.json'), 'utf8')).stage.type).toBe('italic-headline');
+ expect(JSON.parse(readFileSync(join(out, 'editorial.style.json'), 'utf8')).metadata['maptaste:taste']).toBe('editorial');
+ const tasted = run(['check','test/fixtures/tastes/terrain-quiet.json','--taste','terrain-quiet','--format','json']);
+ expect(tasted.status).toBe(0);
+ expect(JSON.parse(tasted.stdout).score).toBe(100);
+ expect(JSON.parse(tasted.stdout).taste).toBe('terrain-quiet');
+ expect(run(['check','test/fixtures/tastes/rainbow.json','--taste','civic']).status).toBe(1);
+ expect(run(['check','test/fixtures/good-style.json','--pack','cn']).status).toBe(0);
  expect(run(['mcp','--extra']).status).toBe(2);
  const mcp = spawn(process.execPath, ['dist/cli.js', 'mcp'], { stdio: ['pipe', 'pipe', 'pipe'] });
  let stderr = '';

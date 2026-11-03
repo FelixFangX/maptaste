@@ -2,8 +2,11 @@
 import maplibregl, { type ExpressionSpecification, type StyleSpecification } from 'maplibre-gl';
 import liberty from './liberty.json';
 import { check } from '../../src/engine.js';
-import type { StyleDoc } from '../../src/types.js';
-import { rainbowScale, sequentialScale, sequentialScaleDark, tasteSpecimen, type TasteKind } from '../../src/specimens.js';
+import { defaultKnobs, tasteRamp, tasteSpecimen, type TasteKnobs } from '../../src/specimens.js';
+import { isTaste, tastes } from '../../src/tastes.js';
+import type { StyleDoc, TasteName } from '../../src/types.js';
+import { markGallery, renderGallery } from './gallery.js';
+import { cityTheme, themeDelta, type CityTheme } from './theme.js';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
 
@@ -32,124 +35,28 @@ baseStyle.layers.splice(baseStyle.layers.indexOf(waterLayer) + 1, 0, {
     'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.4, 16, 1.2] },
 });
 
-type Properties = Record<string, unknown>;
-type LayerTheme = { id: string; paint: Properties; layout: Properties };
-type Theme = { layers: LayerTheme[]; sky: NonNullable<StyleSpecification['sky']>; light: NonNullable<StyleSpecification['light']> };
-function prepareTheme(dark: boolean, before: boolean): Theme {
-  // Before is the same composed city with a rainbow height ramp, not stock Liberty.
-  const night = dark && !before;
-  const paper = night ? '#0b0b0b' : '#f7f8f6';
-  const ground = night ? '#161d22' : '#e9ede9';
-  const water = night ? '#233b4b' : '#b9ced9';
-  const colors = before ? rainbowScale : night ? sequentialScaleDark : sequentialScale;
-  const buildingColor = ['interpolate', ['linear'], height, 8, colors[0], 16, colors[1], 28, colors[2], 48, colors[3], 90, colors[4], 160, colors[5]] as ExpressionSpecification;
-  const land: Record<string, string> = {
-    park: night ? '#293c35' : '#d1dfce',
-    landcover_wood: night ? '#294138' : '#aec7b0',
-    landcover_grass: night ? '#35483a' : '#c2d4b8',
-    landcover_sand: night ? '#494435' : '#e9dfc4',
-    landcover_ice: night ? '#384952' : '#e0eaeb',
-    landcover_wetland: night ? '#2c4542' : '#b9d2c8',
-    landuse_residential: night ? '#232a2c' : '#e1e3dc',
-    landuse_hospital: night ? '#3b3036' : '#e7d9db',
-    landuse_school: night ? '#3c3d30' : '#e3dfc8',
-    landuse_cemetery: night ? '#303d34' : '#cdd7c4',
-    landuse_pitch: night ? '#354b40' : '#bfceb8',
-    landuse_track: night ? '#494039' : '#d9cec0',
-  };
-  return {
-    sky: {
-      'sky-color': paper, 'horizon-color': paper, 'fog-color': night ? '#26333c' : '#e5ecec',
-      'sky-horizon-blend': 0.8, 'horizon-fog-blend': 0.65, 'fog-ground-blend': 0.35, 'atmosphere-blend': 0,
-    },
-    light: { anchor: 'viewport', color: '#fff9ee', intensity: night ? 0.22 : 0.3, position: [1.5, 210, 35] },
-    layers: baseStyle.layers.map(layer => {
-      const id = layer.id;
-      const paint: Properties = { ...layer.paint };
-      const layout: Properties = { ...layer.layout };
-      if (layer.type === 'background') paint['background-color'] = paper;
-      if (layer.type === 'raster') layout.visibility = 'none';
-      if (layer.type === 'fill') {
-        const color = id === 'water' ? water : land[id] ?? ground;
-        paint['fill-color'] = color;
-        paint['fill-outline-color'] = color;
-        // Suppress sprite patterns in the cinematic palette.
-        if ('fill-pattern' in paint) paint['fill-pattern'] = undefined;
-        if (id === 'landcover_wood' || id === 'landcover_grass') paint['fill-opacity'] = 0.7;
-      }
-      if (layer.type === 'line') {
-        const major = /motorway|trunk|primary/.test(id);
-        const medium = /secondary|tertiary/.test(id);
-        const service = /service|track|path|rail|transit/.test(id);
-        paint['line-color'] = /waterway/.test(id) ? (night ? '#416274' : '#91b5c6')
-          : /boundary/.test(id) ? (night ? '#47535a' : '#c3ccc9')
-          : id === 'park_outline' ? (night ? '#3c5145' : '#b9ccb5')
-          : /casing/.test(id) ? (major ? (night ? '#626052' : '#bdbbac') : (night ? '#29353b' : '#d0d6d1'))
-          : major ? (night ? '#77796e' : '#f0e9d6')
-          : medium ? (night ? '#566167' : '#f5f4eb')
-          : service ? (night ? '#303c42' : '#d9dfdb')
-          : (night ? '#414f57' : '#fafbf8');
-      }
-      if (layer.type === 'symbol') {
-        if (/poi|housenumber/.test(id)) layout.visibility = 'none';
-        paint['text-color'] = night ? '#b2c1c8' : '#61737c';
-        paint['text-halo-color'] = paper;
-        paint['text-halo-width'] = 1;
-      }
-      if (id === 'maptaste-shoreline') {
-        paint['line-color'] = night ? '#4c6c79' : '#839fa9';
-        paint['line-opacity'] = 0.75;
-      }
-      if (layer.type === 'fill' && layer['source-layer'] === 'building') paint['fill-color'] = buildingColor;
-      if (layer.type === 'fill-extrusion' && layer['source-layer'] === 'building') paint['fill-extrusion-color'] = buildingColor;
-      return { id, paint, layout };
-    }),
-  };
-}
-
-// Before stays on the light study so the rainbow ramp stays comparable.
-const themes = { before: prepareTheme(false, true), light: prepareTheme(false, false), dark: prepareTheme(true, false) };
-// Include absent properties in every map so returning to Before restores defaults.
-for (const [index] of baseStyle.layers.entries()) {
-  for (const kind of ['paint', 'layout'] as const) {
-    const keys = new Set(Object.values(themes).flatMap(theme => Object.keys(theme.layers[index][kind])));
-    for (const theme of Object.values(themes)) for (const key of keys) {
-      theme.layers[index][kind][key] ??= null;
-    }
-  }
-}
-// Compute only changed properties once, including resets to Liberty defaults.
-type Change = { id: string; kind: 'paint' | 'layout'; key: string; value: unknown };
-const changes = new Map<Theme, Map<Theme, Change[]>>();
-for (const from of Object.values(themes)) {
-  const targets = new Map<Theme, Change[]>();
-  for (const to of Object.values(themes)) {
-    const delta: Change[] = [];
-    to.layers.forEach((layer, index) => {
-      for (const kind of ['paint', 'layout'] as const) {
-        for (const [key, value] of Object.entries(layer[kind])) {
-          if (JSON.stringify(value) !== JSON.stringify(from.layers[index][kind][key])) {
-            delta.push({ id: layer.id, kind, key, value });
-          }
-        }
-      }
-    });
-    targets.set(to, delta);
-  }
-  changes.set(from, targets);
-}
-const initial = themes.light;
-baseStyle.sky = initial.sky;
-baseStyle.light = initial.light;
-for (const [index, layer] of baseStyle.layers.entries()) {
-  // Null resets are for setters, not the initial style document.
-  const properties = (values: Properties) => Object.fromEntries(Object.entries(values).filter(([, value]) => value != null));
-  Object.assign(layer, { paint: properties(initial.layers[index].paint), layout: properties(initial.layers[index].layout) });
-}
 const params = new URLSearchParams(location.search);
 let dark = params.get('theme') === 'dark';
 let before = params.get('mode') === 'before';
-let applied = initial;
+const requested = params.get('taste');
+let taste: TasteName = requested && isTaste(requested) ? requested : 'ink-paper';
+let knobs: TasteKnobs = { ...defaultKnobs[taste] };
+function activeTheme(): CityTheme {
+  return cityTheme(baseStyle.layers, {
+    taste, dark, before,
+    classes: knobs.classes, lineWidth: knobs.lineWidth, labelSize: knobs.labelSize, labelRanks: knobs.labels,
+  });
+}
+let applied = activeTheme();
+baseStyle.sky = applied.sky;
+baseStyle.light = applied.light;
+for (const [index, layer] of baseStyle.layers.entries()) {
+  const defined = (values: Record<string, unknown>) => Object.fromEntries(Object.entries(values).filter(([, value]) => value != null));
+  Object.assign(layer, { paint: defined(applied.layers[index]!.paint), layout: defined(applied.layers[index]!.layout) });
+  const extrudedOpen = before || tastes[taste].stage.extrusion;
+  if (layer.id === 'building') layer.maxzoom = extrudedOpen ? 14 : 24;
+  if (layer.id === 'building-3d') layer.minzoom = extrudedOpen ? 14 : 24;
+}
 let ready = false;
 let map: maplibregl.Map;
 const placeInput = document.querySelector<HTMLInputElement>('#place')!;
@@ -210,7 +117,13 @@ async function resolvePlace(source: URLSearchParams = params, live = false) {
       if (!params.get(key)?.trim() || !Number.isFinite(value) || value < min || value > max) throw new Error(`Invalid ${key}.`);
       return value;
     };
-    const camera = { center, zoom: number('z', 15.4, 0, 24), pitch: number('pitch', 57, 0, 70), bearing: number('bearing', -32, -360, 360) };
+    const stage = tastes[taste].stage;
+    const camera = {
+      center,
+      zoom: number('z', before ? 15.4 : stage.zoom, 0, 24),
+      pitch: number('pitch', before ? 57 : stage.pitch, 0, 70),
+      bearing: number('bearing', before ? -32 : stage.bearing, -360, 360),
+    };
     view = { ...camera, name };
     if (request !== resolution) return;
     const place = { center, name, query: source.get('place')?.trim() || null };
@@ -283,17 +196,43 @@ function startMap(camera: { center: [number, number]; zoom: number; pitch: numbe
     status.textContent = 'Map could not load. Check your connection and WebGL support.';
   });
   map.on('idle', () => { if (!placeError) status.hidden = true; });
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pulse = (time: number) => {
+    requestAnimationFrame(pulse);
+    if (!ready || reduced || before || tastes[taste].stage.motion !== 'shoreline') return;
+    if (!map.getLayer('maptaste-shoreline')) return;
+    map.setPaintProperty('maptaste-shoreline', 'line-opacity', 0.35 + 0.4 * (0.5 + 0.5 * Math.sin(time / 1400)));
+  };
+  requestAnimationFrame(pulse);
+}
+function syncPlate() {
+  const stage = tastes[taste].stage;
+  const extruded = before || stage.extrusion;
+  if (map.getLayer('building')) map.setLayerZoomRange('building', 13, extruded ? 14 : 24);
+  if (map.getLayer('building-3d')) map.setLayerZoomRange('building-3d', extruded ? 14 : 24, 24);
+  if (map.getLayer('natural_earth')) map.setLayerZoomRange('natural_earth', 0, !before && stage.hillshade ? 9 : 7);
+}
+function frameCamera() {
+  if (!ready) return;
+  const stage = tastes[taste].stage;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  map.easeTo({
+    zoom: before ? 15.4 : stage.zoom,
+    pitch: before ? 57 : stage.pitch,
+    bearing: before ? -32 : stage.bearing,
+    duration: reduced ? 0 : 650,
+  });
 }
 function updateStyle() {
   if (!ready) return;
-  const next = before ? themes.before : dark ? themes.dark : themes.light;
-  if (next === applied) return;
-  for (const change of changes.get(applied)!.get(next)!) {
+  const next = activeTheme();
+  for (const change of themeDelta(applied, next)) {
     if (change.kind === 'paint') map.setPaintProperty(change.id, change.key, change.value);
     else map.setLayoutProperty(change.id, change.key, change.value);
   }
   map.setSky(next.sky);
   map.setLight(next.light);
+  syncPlate();
   applied = next;
 }
 const theme = document.querySelector<HTMLButtonElement>('#theme')!;
@@ -312,15 +251,59 @@ const findingsEl = document.querySelector<HTMLOListElement>('#findings')!;
 const styleInput = document.querySelector<HTMLTextAreaElement>('#style-json')!;
 const rampEl = document.querySelector<HTMLElement>('#ramp')!;
 const fixtureButtons = document.querySelectorAll<HTMLButtonElement>('[data-fixture]');
-function paintRamp(kind: TasteKind | null) {
+const gallery = document.querySelector<HTMLElement>('#gallery')!;
+const cta = document.querySelector<HTMLElement>('#cta')!;
+const studyTaste = document.querySelector<HTMLElement>('#study-taste');
+const knobClasses = document.querySelector<HTMLInputElement>('#knob-classes')!;
+const knobLabelSize = document.querySelector<HTMLInputElement>('#knob-label-size')!;
+const knobLabels = document.querySelector<HTMLInputElement>('#knob-labels')!;
+const knobLine = document.querySelector<HTMLInputElement>('#knob-line')!;
+const outClasses = document.querySelector<HTMLOutputElement>('#out-classes')!;
+const outLabelSize = document.querySelector<HTMLOutputElement>('#out-label-size')!;
+const outLabels = document.querySelector<HTMLOutputElement>('#out-labels')!;
+const outLine = document.querySelector<HTMLOutputElement>('#out-line')!;
+function paintRamp(kind: 'rainbow' | 'taste' | null) {
   rampEl.replaceChildren();
   rampEl.hidden = kind === null;
   if (!kind) return;
-  for (const color of kind === 'rainbow' ? rainbowScale : sequentialScale) {
+  for (const color of tasteRamp(kind === 'rainbow' ? 'rainbow' : taste)) {
     const swatch = document.createElement('i');
     swatch.style.background = color;
     rampEl.append(swatch);
   }
+}
+function paintKnob(input: HTMLInputElement, output: HTMLOutputElement, value: number, cap: number | null) {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const span = max - min || 1;
+  const row = input.closest<HTMLElement>('.knob');
+  const shown = Number(input.step) < 1 ? value.toFixed(1) : String(Math.round(value));
+  if (input.value !== shown) input.value = shown;
+  const current = Number(input.value);
+  const over = cap != null && current > cap + 1e-6;
+  input.style.setProperty('--pct', `${Math.min(100, Math.max(0, ((current - min) / span) * 100))}%`);
+  input.style.setProperty('--fill', over ? 'var(--accent)' : 'var(--ink)');
+  output.textContent = shown;
+  if (cap != null && cap >= min && cap <= max) {
+    row?.style.setProperty('--cap', `${((cap - min) / span) * 100}%`);
+    row?.setAttribute('data-capped', '');
+    row?.toggleAttribute('data-over', over);
+  } else {
+    row?.removeAttribute('data-capped');
+    row?.removeAttribute('data-over');
+  }
+}
+function syncChrome() {
+  const rules = tastes[taste].composition;
+  cta.textContent = `npx maptaste check style.json --taste ${taste}`;
+  if (studyTaste) studyTaste.textContent = taste;
+  markGallery(gallery, taste);
+  const tasteButton = document.querySelector<HTMLButtonElement>('[data-fixture="taste"]');
+  if (tasteButton) tasteButton.textContent = taste;
+  paintKnob(knobClasses, outClasses, knobs.classes, rules.maxFillStops);
+  paintKnob(knobLabelSize, outLabelSize, knobs.labelSize, null);
+  paintKnob(knobLabels, outLabels, knobs.labels, rules.maxLabelLayers);
+  paintKnob(knobLine, outLine, knobs.lineWidth, rules.maxLineWidth);
 }
 function renderFindings(items: { id: string; severity: string; message: string; path?: string }[]) {
   findingsEl.replaceChildren();
@@ -354,7 +337,7 @@ function runCheck() {
   try { parsed = JSON.parse(styleInput.value); }
   catch { scoreEl.textContent = '—'; renderFindings([{ id: '', severity: 'info', message: 'Invalid JSON' }]); return; }
   try {
-    const result = check(parsed as StyleDoc);
+    const result = check(parsed as StyleDoc, { taste });
     scoreEl.textContent = String(result.score);
     renderFindings(result.findings);
   } catch (error) {
@@ -365,22 +348,58 @@ function runCheck() {
 function syncModeButtons() {
   modeButtons.forEach(control => control.setAttribute('aria-pressed', String((control.dataset.mode === 'before') === before)));
 }
-function applyFixture(kind: TasteKind) {
-  const nextBefore = kind === 'rainbow';
-  if (before !== nextBefore) {
-    before = nextBefore;
-    params.set('mode', before ? 'before' : 'after');
-    updateUrl();
-    updateStyle();
-  }
-  syncModeButtons();
-  fixtureButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.fixture === kind)));
-  styleInput.value = JSON.stringify(tasteSpecimen(kind), null, 2);
-  paintRamp(kind);
+function showTasteSpecimen() {
+  fixtureButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.fixture === 'taste')));
+  styleInput.value = JSON.stringify(tasteSpecimen(taste, knobs), null, 2);
+  paintRamp('taste');
   runCheck();
 }
-modeButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.mode === 'before' ? 'rainbow' : 'sequential')));
-fixtureButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.fixture as TasteKind)));
+function applyFixture(kind: 'rainbow' | 'taste') {
+  before = kind === 'rainbow';
+  params.set('mode', before ? 'before' : 'after');
+  updateUrl();
+  syncModeButtons();
+  if (before) {
+    fixtureButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.fixture === 'rainbow')));
+    styleInput.value = JSON.stringify(tasteSpecimen('rainbow'), null, 2);
+    paintRamp('rainbow');
+    runCheck();
+  } else showTasteSpecimen();
+  updateStyle();
+  frameCamera();
+}
+function selectTaste(id: TasteName) {
+  taste = id;
+  knobs = { ...defaultKnobs[id] };
+  params.set('taste', id);
+  syncChrome();
+  applyFixture('taste');
+}
+modeButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.mode === 'before' ? 'rainbow' : 'taste')));
+fixtureButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.fixture === 'rainbow' ? 'rainbow' : 'taste')));
+renderGallery(gallery, taste, id => {
+  selectTaste(id);
+  document.querySelector('#showcase')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+for (const input of [knobClasses, knobLabelSize, knobLabels, knobLine]) {
+  input.addEventListener('input', () => {
+    knobs = {
+      classes: Number(knobClasses.value),
+      labelSize: Number(knobLabelSize.value),
+      labels: Number(knobLabels.value),
+      lineWidth: Number(knobLine.value),
+    };
+    syncChrome();
+    if (before) {
+      before = false;
+      params.set('mode', 'after');
+      updateUrl();
+      syncModeButtons();
+    }
+    showTasteSpecimen();
+    updateStyle();
+  });
+}
 let checkTimer: ReturnType<typeof setTimeout> | undefined;
 styleInput.addEventListener('input', () => {
   fixtureButtons.forEach(button => button.setAttribute('aria-pressed', 'false'));
@@ -389,11 +408,11 @@ styleInput.addEventListener('input', () => {
   checkTimer = setTimeout(runCheck, 160);
 });
 function currentStyleDocument(): StyleSpecification {
-  const theme = before ? themes.before : dark ? themes.dark : themes.light;
+  const theme = activeTheme();
   const style = structuredClone(baseStyle);
   style.sky = theme.sky;
   style.light = theme.light;
-  const defined = (values: Properties) => Object.fromEntries(Object.entries(values).filter(([, value]) => value != null));
+  const defined = (values: Record<string, unknown>) => Object.fromEntries(Object.entries(values).filter(([, value]) => value != null));
   for (const [index, layer] of style.layers.entries()) {
     layer.paint = defined(theme.layers[index]!.paint);
     layer.layout = defined(theme.layers[index]!.layout);
@@ -405,8 +424,9 @@ function currentStyleDocument(): StyleSpecification {
   const metadata: Record<string, unknown> = {
     ...(typeof style.metadata === 'object' && style.metadata ? style.metadata as Record<string, unknown> : {}),
     'maptaste:place': view.name,
+    'maptaste:taste': before ? 'rainbow' : taste,
     'maptaste:mode': before ? 'before' : 'after',
-    'maptaste:theme': before || !dark ? 'light' : 'dark',
+    'maptaste:theme': taste === 'night-ops' || (dark && !before) ? 'dark' : 'light',
   };
   if (!before) metadata['maptaste:themes'] = ['light', 'dark'];
   style.metadata = metadata;
@@ -463,5 +483,6 @@ document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 theme.textContent = dark ? 'Light' : 'Dark';
 theme.setAttribute('aria-pressed', String(dark));
 syncModeButtons();
-applyFixture(before ? 'rainbow' : 'sequential');
+syncChrome();
+applyFixture(before ? 'rainbow' : 'taste');
 void beginSession();

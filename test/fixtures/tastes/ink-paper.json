@@ -1,0 +1,112 @@
+{
+  "version": 8,
+  "name": "Ink & paper",
+  "metadata": {
+    "maptaste:taste": "ink-paper",
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {
+    "areas": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#ebe7df"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#e4eaf2",
+          1,
+          "#6d8fb8",
+          2,
+          "#1a2a4a"
+        ]
+      }
+    },
+    {
+      "id": "strokes",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#1a2a4a",
+        "line-width": 0.8
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 14
+      },
+      "paint": {
+        "text-color": "#1a2a4a",
+        "text-halo-color": "#ebe7df",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-1",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 14
+      },
+      "paint": {
+        "text-color": "#1a2a4a",
+        "text-halo-color": "#ebe7df",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-2",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
+        "text-size": 14
+      },
+      "paint": {
+        "text-color": "#1a2a4a",
+        "text-halo-color": "#ebe7df",
+        "text-halo-width": 1.25
+      }
+    }
+  ]
+}

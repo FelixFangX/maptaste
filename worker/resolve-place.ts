@@ -21,7 +21,8 @@ export function looksLikeMatch(q: string, name = '', displayName = ''): boolean 
   if (!query) return false;
   const n = normalize(name);
   const first = normalize(displayName.split(',')[0] ?? '');
-  if (isNicknameLike(q)) return n === query || first === query;
+  // Exact or prefix, so 上海 matches 上海市 without letting 魔都 match 上海.
+  if (isNicknameLike(q)) return n === query || first === query || n.startsWith(query) || first.startsWith(query);
   const d = normalize(displayName);
   return n.includes(query) || d.includes(query) || first.startsWith(query) || n.startsWith(query);
 }

@@ -89,7 +89,7 @@ describe('geocode', () => {
     const { call } = setup();
     const response = await call('/api/geocode?q=%20Tokyo%20');
     expect(await response.json()).toEqual({ ok: true, resolvedVia: 'nominatim', name: 'Tokyo, Japan', lat: 35.6812, lng: 139.7671, lang: 'en', bbox: [35, 36, 139, 140] });
-    expect(response.headers.get('Cache-Control')).toBe('public, max-age=86400');
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
     const [url, options] = fetcher.mock.calls[0];
     expect(url.searchParams.get('q')).toBe('Tokyo');
     expect(options.headers).toEqual({ 'User-Agent': 'maptaste.ledring.dev/0.1 (felix@ledring.dev)', 'Accept-Language': 'en' });
@@ -120,8 +120,8 @@ describe('AI place resolution', () => {
     expect(result).not.toHaveProperty('alias');
     expect((await call('/api/geocode?q=魔都')).status).toBe(200);
     expect(ai).toHaveBeenCalledTimes(1);
-    expect(ai.mock.calls[0][0]).toBe('@cf/meta/llama-3.1-8b-instruct');
-    expect(fetcher.mock.calls.map(([url]) => url.searchParams.get('q'))).toEqual(['魔都', '上海', '上海']);
+    expect(ai.mock.calls[0][0]).toBe('@cf/meta/llama-3.1-8b-instruct-fp8');
+    expect(fetcher.mock.calls.map(([url]) => url.searchParams.get('q'))).toEqual(['上海', '上海']);
   });
   it.each(['ai_global', 'ai_ip'])('rejects exhausted %s budgets before AI', async scope => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => Response.json([])));

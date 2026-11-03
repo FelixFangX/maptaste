@@ -51,13 +51,28 @@
           <button type="button" data-mode="before" aria-pressed="false">Before</button>
           <button type="button" data-mode="after" aria-pressed="true">After</button>
         </div>
+        <button id="copy-style" type="button">Copy style</button>
       </div>
         </div>
+      <div class="stage">
       <section class="map-shell" aria-label="Interactive building map">
         <div id="map"></div>
         <p id="map-status" role="status" hidden></p>
         <div class="place-caption" hidden><span class="place-title"></span><span id="place-coords"></span></div>
       </section>
+      <aside class="check" aria-label="Try check">
+        <div class="check-top">
+          <p class="check-score"><span id="score">—</span><span>/100</span></p>
+          <div class="fixture-control" role="group" aria-label="Style fixture">
+            <button type="button" data-fixture="rainbow">Rainbow</button>
+            <button type="button" data-fixture="sequential">Sequential</button>
+          </div>
+          <div id="ramp" class="ramp" hidden></div>
+        </div>
+        <ol id="findings" aria-live="polite"></ol>
+        <textarea id="style-json" spellcheck="false" aria-label="MapLibre style JSON"></textarea>
+      </aside>
+      </div>
       </section>
       <footer><span>A little perspective changes everything.</span><span>Built with MapLibre</span></footer>
     </main>

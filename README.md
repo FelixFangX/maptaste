@@ -93,7 +93,9 @@ Agents can preview any place with the same Before/After themes using a name or c
 - https://maptaste.ledring.dev/?place=Paris&lang=zh
 
 
-A Vite + MapLibre demo on real OpenFreeMap San Francisco buildings at pitch 57°. Before pairs stock Liberty with categorical Set1 height steps. After opens by default with sequential blues, a paper or void base, and Light / Dark paint-only toggles that keep the camera.
+A Vite + MapLibre demo on real OpenFreeMap buildings at pitch 57°. Before and After share one composed city: Before colors building height with a rainbow choropleth, After uses a sequential blue ramp on a paper or void base. Light / Dark are paint-only toggles that keep the camera.
+
+Beside the map, Try check loads a rainbow or sequential MapLibre style fixture — or paste your own — and runs the same `check` engine as the CLI, with a 0–100 score and MT findings. Copy style puts the current city and view (After by default) on the clipboard as MapLibre style JSON.
 
 Live: [maptaste.ledring.dev](https://maptaste.ledring.dev) (daily per-IP session quota).
 
@@ -107,22 +109,26 @@ Tiles, glyphs, and sprites come from OpenFreeMap without an API key. An internet
 
 ## MCP
 
+Once the package is published, start the server with:
+
 ```sh
-pnpm install && pnpm build
+npx -y maptaste mcp
 ```
 
-Add to Claude Desktop or Cursor (replace the absolute path, or use the `maptaste-mcp` binary after install):
+Claude Desktop or Cursor:
 
 ```json
 {
   "mcpServers": {
     "maptaste": {
-      "command": "node",
-      "args": ["/absolute/path/maptaste/dist/mcp/server.js"]
+      "command": "npx",
+      "args": ["-y", "maptaste", "mcp"]
     }
   }
 }
 ```
+
+The same server is the `maptaste-mcp` bin (`npx -y --package maptaste maptaste-mcp`). From a checkout: `pnpm install && pnpm build`, then `node dist/cli.js mcp` or `node dist/mcp/server.js`.
 
 Tools: `check_taste` accepts `{ "style": {} }` or `{ "styleJson": "..." }`; `validate_style` checks object / version / layers structure; `preview_info` locates the showcase; `preview_place` returns a hosted URL from `place` or `ll` (lng,lat), with optional `zoom`, `mode`, `theme`, and `lang`. `place` accepts English, Chinese, and other local proper nouns; named places resolve in the browser; `center` is null until resolved. Validation is intentionally basic.
 

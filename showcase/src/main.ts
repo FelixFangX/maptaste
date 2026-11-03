@@ -1,6 +1,9 @@
 /// <reference types="vite/client" />
 import maplibregl, { type ExpressionSpecification, type StyleSpecification } from 'maplibre-gl';
 import liberty from './liberty.json';
+import { check } from '../../src/engine.js';
+import type { StyleDoc } from '../../src/types.js';
+import { rainbowScale, sequentialScale, sequentialScaleDark, tasteSpecimen, type TasteKind } from '../../src/specimens.js';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
 
@@ -33,77 +36,69 @@ type Properties = Record<string, unknown>;
 type LayerTheme = { id: string; paint: Properties; layout: Properties };
 type Theme = { layers: LayerTheme[]; sky: NonNullable<StyleSpecification['sky']>; light: NonNullable<StyleSpecification['light']> };
 function prepareTheme(dark: boolean, before: boolean): Theme {
-  const paper = dark ? '#0b0b0b' : '#f7f8f6';
-  const ground = dark ? '#161d22' : '#e9ede9';
-  const water = dark ? '#233b4b' : '#b9ced9';
-  const colors = before
-    ? ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a65628']
-    : dark
-      ? ['#304b60', '#41617a', '#557b96', '#7095ad', '#8aafc4', '#b1cedc']
-      : ['#dce7eb', '#c4d7e0', '#a4c0d0', '#7fa3bb', '#5b829f', '#365b7a'];
-  const buildingColor: ExpressionSpecification = ['step', height, colors[0],
-    10, colors[1], 18, colors[2], 30, colors[3], 55, colors[4], 100, colors[5]];
+  // Before is the same composed city with a rainbow height ramp, not stock Liberty.
+  const night = dark && !before;
+  const paper = night ? '#0b0b0b' : '#f7f8f6';
+  const ground = night ? '#161d22' : '#e9ede9';
+  const water = night ? '#233b4b' : '#b9ced9';
+  const colors = before ? rainbowScale : night ? sequentialScaleDark : sequentialScale;
+  const buildingColor = ['interpolate', ['linear'], height, 8, colors[0], 16, colors[1], 28, colors[2], 48, colors[3], 90, colors[4], 160, colors[5]] as ExpressionSpecification;
   const land: Record<string, string> = {
-    park: dark ? '#293c35' : '#d1dfce',
-    landcover_wood: dark ? '#294138' : '#aec7b0',
-    landcover_grass: dark ? '#35483a' : '#c2d4b8',
-    landcover_sand: dark ? '#494435' : '#e9dfc4',
-    landcover_ice: dark ? '#384952' : '#e0eaeb',
-    landcover_wetland: dark ? '#2c4542' : '#b9d2c8',
-    landuse_residential: dark ? '#232a2c' : '#e1e3dc',
-    landuse_hospital: dark ? '#3b3036' : '#e7d9db',
-    landuse_school: dark ? '#3c3d30' : '#e3dfc8',
-    landuse_cemetery: dark ? '#303d34' : '#cdd7c4',
-    landuse_pitch: dark ? '#354b40' : '#bfceb8',
-    landuse_track: dark ? '#494039' : '#d9cec0',
+    park: night ? '#293c35' : '#d1dfce',
+    landcover_wood: night ? '#294138' : '#aec7b0',
+    landcover_grass: night ? '#35483a' : '#c2d4b8',
+    landcover_sand: night ? '#494435' : '#e9dfc4',
+    landcover_ice: night ? '#384952' : '#e0eaeb',
+    landcover_wetland: night ? '#2c4542' : '#b9d2c8',
+    landuse_residential: night ? '#232a2c' : '#e1e3dc',
+    landuse_hospital: night ? '#3b3036' : '#e7d9db',
+    landuse_school: night ? '#3c3d30' : '#e3dfc8',
+    landuse_cemetery: night ? '#303d34' : '#cdd7c4',
+    landuse_pitch: night ? '#354b40' : '#bfceb8',
+    landuse_track: night ? '#494039' : '#d9cec0',
   };
   return {
-    sky: before ? {
-      'sky-color': '#dcecf7', 'horizon-color': '#f0f5f8', 'fog-color': '#f0f5f8',
-      'sky-horizon-blend': 0.3, 'horizon-fog-blend': 0.1, 'fog-ground-blend': 0, 'atmosphere-blend': 0,
-    } : {
-      'sky-color': paper, 'horizon-color': paper, 'fog-color': dark ? '#26333c' : '#e5ecec',
+    sky: {
+      'sky-color': paper, 'horizon-color': paper, 'fog-color': night ? '#26333c' : '#e5ecec',
       'sky-horizon-blend': 0.8, 'horizon-fog-blend': 0.65, 'fog-ground-blend': 0.35, 'atmosphere-blend': 0,
     },
-    light: { anchor: 'viewport', color: '#fff9ee', intensity: before ? 0.5 : 0.3, position: [1.5, 210, 35] },
+    light: { anchor: 'viewport', color: '#fff9ee', intensity: night ? 0.22 : 0.3, position: [1.5, 210, 35] },
     layers: baseStyle.layers.map(layer => {
       const id = layer.id;
       const paint: Properties = { ...layer.paint };
       const layout: Properties = { ...layer.layout };
-      if (!before) {
-        if (layer.type === 'background') paint['background-color'] = paper;
-        if (layer.type === 'raster') layout.visibility = 'none';
-        if (layer.type === 'fill') {
-          const color = id === 'water' ? water : land[id] ?? ground;
-          paint['fill-color'] = color;
-          paint['fill-outline-color'] = color;
-          // Suppress sprite patterns in the cinematic palette.
-          if ('fill-pattern' in paint) paint['fill-pattern'] = undefined;
-          if (id === 'landcover_wood' || id === 'landcover_grass') paint['fill-opacity'] = 0.7;
-        }
-        if (layer.type === 'line') {
-          const major = /motorway|trunk|primary/.test(id);
-          const medium = /secondary|tertiary/.test(id);
-          const service = /service|track|path|rail|transit/.test(id);
-          paint['line-color'] = /waterway/.test(id) ? (dark ? '#416274' : '#91b5c6')
-            : /boundary/.test(id) ? (dark ? '#47535a' : '#c3ccc9')
-            : id === 'park_outline' ? (dark ? '#3c5145' : '#b9ccb5')
-            : /casing/.test(id) ? (major ? (dark ? '#626052' : '#bdbbac') : (dark ? '#29353b' : '#d0d6d1'))
-            : major ? (dark ? '#77796e' : '#f0e9d6')
-            : medium ? (dark ? '#566167' : '#f5f4eb')
-            : service ? (dark ? '#303c42' : '#d9dfdb')
-            : (dark ? '#414f57' : '#fafbf8');
-        }
-        if (layer.type === 'symbol') {
-          if (/poi|housenumber/.test(id)) layout.visibility = 'none';
-          paint['text-color'] = dark ? '#b2c1c8' : '#61737c';
-          paint['text-halo-color'] = paper;
-          paint['text-halo-width'] = 1;
-        }
+      if (layer.type === 'background') paint['background-color'] = paper;
+      if (layer.type === 'raster') layout.visibility = 'none';
+      if (layer.type === 'fill') {
+        const color = id === 'water' ? water : land[id] ?? ground;
+        paint['fill-color'] = color;
+        paint['fill-outline-color'] = color;
+        // Suppress sprite patterns in the cinematic palette.
+        if ('fill-pattern' in paint) paint['fill-pattern'] = undefined;
+        if (id === 'landcover_wood' || id === 'landcover_grass') paint['fill-opacity'] = 0.7;
+      }
+      if (layer.type === 'line') {
+        const major = /motorway|trunk|primary/.test(id);
+        const medium = /secondary|tertiary/.test(id);
+        const service = /service|track|path|rail|transit/.test(id);
+        paint['line-color'] = /waterway/.test(id) ? (night ? '#416274' : '#91b5c6')
+          : /boundary/.test(id) ? (night ? '#47535a' : '#c3ccc9')
+          : id === 'park_outline' ? (night ? '#3c5145' : '#b9ccb5')
+          : /casing/.test(id) ? (major ? (night ? '#626052' : '#bdbbac') : (night ? '#29353b' : '#d0d6d1'))
+          : major ? (night ? '#77796e' : '#f0e9d6')
+          : medium ? (night ? '#566167' : '#f5f4eb')
+          : service ? (night ? '#303c42' : '#d9dfdb')
+          : (night ? '#414f57' : '#fafbf8');
+      }
+      if (layer.type === 'symbol') {
+        if (/poi|housenumber/.test(id)) layout.visibility = 'none';
+        paint['text-color'] = night ? '#b2c1c8' : '#61737c';
+        paint['text-halo-color'] = paper;
+        paint['text-halo-width'] = 1;
       }
       if (id === 'maptaste-shoreline') {
-        paint['line-color'] = dark ? '#4c6c79' : '#839fa9';
-        paint['line-opacity'] = before ? 0 : 0.75;
+        paint['line-color'] = night ? '#4c6c79' : '#839fa9';
+        paint['line-opacity'] = 0.75;
       }
       if (layer.type === 'fill' && layer['source-layer'] === 'building') paint['fill-color'] = buildingColor;
       if (layer.type === 'fill-extrusion' && layer['source-layer'] === 'building') paint['fill-extrusion-color'] = buildingColor;
@@ -112,7 +107,7 @@ function prepareTheme(dark: boolean, before: boolean): Theme {
   };
 }
 
-// Before always means stock Liberty, regardless of the surrounding page theme.
+// Before stays on the light study so the rainbow ramp stays comparable.
 const themes = { before: prepareTheme(false, true), light: prepareTheme(false, false), dark: prepareTheme(true, false) };
 // Include absent properties in every map so returning to Before restores defaults.
 for (const [index] of baseStyle.layers.entries()) {
@@ -162,6 +157,7 @@ placeInput.value = params.get('place') || '';
 let sessionGranted = false;
 let resolution = 0;
 type Place = { center: [number, number]; name: string; query: string | null };
+let view = { center: [-122.4024, 37.7947] as [number, number], zoom: 15.4, pitch: 57, bearing: -32, name: 'San Francisco' };
 let pendingPlace: Place | undefined;
 let statusTimer: ReturnType<typeof setTimeout> | undefined;
 let placeError = false;
@@ -173,6 +169,7 @@ function showPlaceError(error: unknown) {
   statusTimer = setTimeout(() => { placeError = false; status.hidden = true; }, 4000);
 }
 function applyPlace(place: Place) {
+  view = { ...view, center: place.center, name: place.name };
   document.querySelector('.place-title')!.textContent = place.name;
   document.querySelector('#place-coords')!.textContent = `${Math.abs(place.center[1]).toFixed(4)}° ${place.center[1] < 0 ? 'S' : 'N'} / ${Math.abs(place.center[0]).toFixed(4)}° ${place.center[0] < 0 ? 'W' : 'E'}`;
   document.querySelector<HTMLElement>('.place-caption')!.hidden = false;
@@ -214,6 +211,7 @@ async function resolvePlace(source: URLSearchParams = params, live = false) {
       return value;
     };
     const camera = { center, zoom: number('z', 15.4, 0, 24), pitch: number('pitch', 57, 0, 70), bearing: number('bearing', -32, -360, 360) };
+    view = { ...camera, name };
     if (request !== resolution) return;
     const place = { center, name, query: source.get('place')?.trim() || null };
     clearTimeout(statusTimer);
@@ -276,6 +274,10 @@ function startMap(camera: { center: [number, number]; zoom: number; pitch: numbe
     }
     updateStyle();
   });
+  map.on('moveend', () => {
+    const center = map.getCenter();
+    view = { ...view, center: [center.lng, center.lat], zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+  });
   map.on('error', () => {
     status.hidden = false;
     status.textContent = 'Map could not load. Check your connection and WebGL support.';
@@ -305,17 +307,134 @@ theme.addEventListener('click', () => {
   updateStyle();
 });
 const modeButtons = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
-modeButtons.forEach(button => button.addEventListener('click', () => {
-  const nextBefore = button.dataset.mode === 'before';
-  if (before === nextBefore) return;
-  before = nextBefore;
-  params.set('mode', before ? 'before' : 'after');
-  updateUrl();
-  modeButtons.forEach(control => {
-    control.setAttribute('aria-pressed', String((control.dataset.mode === 'before') === before));
-  });
-  updateStyle();
-}));
+const scoreEl = document.querySelector<HTMLElement>('#score')!;
+const findingsEl = document.querySelector<HTMLOListElement>('#findings')!;
+const styleInput = document.querySelector<HTMLTextAreaElement>('#style-json')!;
+const rampEl = document.querySelector<HTMLElement>('#ramp')!;
+const fixtureButtons = document.querySelectorAll<HTMLButtonElement>('[data-fixture]');
+function paintRamp(kind: TasteKind | null) {
+  rampEl.replaceChildren();
+  rampEl.hidden = kind === null;
+  if (!kind) return;
+  for (const color of kind === 'rainbow' ? rainbowScale : sequentialScale) {
+    const swatch = document.createElement('i');
+    swatch.style.background = color;
+    rampEl.append(swatch);
+  }
+}
+function renderFindings(items: { id: string; severity: string; message: string; path?: string }[]) {
+  findingsEl.replaceChildren();
+  for (const finding of items) {
+    const item = document.createElement('li');
+    item.className = finding.severity;
+    const top = document.createElement('div');
+    if (finding.id) {
+      const id = document.createElement('span');
+      id.className = 'rule';
+      id.textContent = finding.id;
+      top.append(id);
+    }
+    const severity = document.createElement('span');
+    severity.className = 'sev';
+    severity.textContent = finding.severity;
+    top.append(severity);
+    const message = document.createElement('p');
+    message.textContent = finding.message;
+    item.append(top, message);
+    if (finding.path) {
+      const path = document.createElement('code');
+      path.textContent = finding.path;
+      item.append(path);
+    }
+    findingsEl.append(item);
+  }
+}
+function runCheck() {
+  let parsed: unknown;
+  try { parsed = JSON.parse(styleInput.value); }
+  catch { scoreEl.textContent = '—'; renderFindings([{ id: '', severity: 'info', message: 'Invalid JSON' }]); return; }
+  try {
+    const result = check(parsed as StyleDoc);
+    scoreEl.textContent = String(result.score);
+    renderFindings(result.findings);
+  } catch (error) {
+    scoreEl.textContent = '—';
+    renderFindings([{ id: '', severity: 'info', message: error instanceof Error ? error.message : 'Could not check style' }]);
+  }
+}
+function syncModeButtons() {
+  modeButtons.forEach(control => control.setAttribute('aria-pressed', String((control.dataset.mode === 'before') === before)));
+}
+function applyFixture(kind: TasteKind) {
+  const nextBefore = kind === 'rainbow';
+  if (before !== nextBefore) {
+    before = nextBefore;
+    params.set('mode', before ? 'before' : 'after');
+    updateUrl();
+    updateStyle();
+  }
+  syncModeButtons();
+  fixtureButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.fixture === kind)));
+  styleInput.value = JSON.stringify(tasteSpecimen(kind), null, 2);
+  paintRamp(kind);
+  runCheck();
+}
+modeButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.mode === 'before' ? 'rainbow' : 'sequential')));
+fixtureButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.fixture as TasteKind)));
+let checkTimer: ReturnType<typeof setTimeout> | undefined;
+styleInput.addEventListener('input', () => {
+  fixtureButtons.forEach(button => button.setAttribute('aria-pressed', 'false'));
+  paintRamp(null);
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(runCheck, 160);
+});
+function currentStyleDocument(): StyleSpecification {
+  const theme = before ? themes.before : dark ? themes.dark : themes.light;
+  const style = structuredClone(baseStyle);
+  style.sky = theme.sky;
+  style.light = theme.light;
+  const defined = (values: Properties) => Object.fromEntries(Object.entries(values).filter(([, value]) => value != null));
+  for (const [index, layer] of style.layers.entries()) {
+    layer.paint = defined(theme.layers[index]!.paint);
+    layer.layout = defined(theme.layers[index]!.layout);
+  }
+  style.center = view.center;
+  style.zoom = view.zoom;
+  style.bearing = view.bearing;
+  style.pitch = view.pitch;
+  const metadata: Record<string, unknown> = {
+    ...(typeof style.metadata === 'object' && style.metadata ? style.metadata as Record<string, unknown> : {}),
+    'maptaste:place': view.name,
+    'maptaste:mode': before ? 'before' : 'after',
+    'maptaste:theme': before || !dark ? 'light' : 'dark',
+  };
+  if (!before) metadata['maptaste:themes'] = ['light', 'dark'];
+  style.metadata = metadata;
+  return style;
+}
+const copyButton = document.querySelector<HTMLButtonElement>('#copy-style')!;
+let copyTimer: ReturnType<typeof setTimeout> | undefined;
+copyButton.addEventListener('click', async () => {
+  const text = JSON.stringify(currentStyleDocument(), null, 2);
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(text);
+    copied = true;
+  } catch {
+    try {
+      const fallback = document.createElement('textarea');
+      fallback.value = text;
+      fallback.setAttribute('readonly', '');
+      document.body.append(fallback);
+      fallback.select();
+      copied = document.execCommand('copy');
+      fallback.remove();
+    } catch { copied = false; }
+  }
+  copyButton.textContent = copied ? 'Copied' : 'Copy failed';
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => { copyButton.textContent = 'Copy style'; }, 1600);
+});
 const status = document.querySelector<HTMLElement>('#map-status')!;
 const localDev = import.meta.env.DEV && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 async function beginSession() {
@@ -343,5 +462,6 @@ async function beginSession() {
 document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 theme.textContent = dark ? 'Light' : 'Dark';
 theme.setAttribute('aria-pressed', String(dark));
-modeButtons.forEach(control => control.setAttribute('aria-pressed', String((control.dataset.mode === 'before') === before)));
+syncModeButtons();
+applyFixture(before ? 'rainbow' : 'sequential');
 void beginSession();

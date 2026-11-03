@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import { check } from './engine.js';
+const usage = 'Usage: maptaste check <file.json> [--format json|text] [--pack global|cn]\n       maptaste mcp';
 async function main() {
  const [command,file,...args]=process.argv.slice(2);
- if(command==='--help'||command==='-h') { console.log('Usage: maptaste check <file.json> [--format json|text] [--pack global|cn]'); return; }
- if(command!=='check'||!file||file.startsWith('--')) throw new Error('Usage: maptaste check <file.json> [--format json|text] [--pack global|cn]');
+ if(command==='--help'||command==='-h') { console.log(usage); return; }
+ if(command==='mcp') { if(file) throw new Error(usage); await import('./mcp/server.js'); return; }
+ if(command!=='check'||!file||file.startsWith('--')) throw new Error(usage);
  let format='text',pack: 'global'|'cn'='global';
  for(let i=0;i<args.length;i+=2) {
  const key=args[i],value=args[i+1];

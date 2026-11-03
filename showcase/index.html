@@ -64,13 +64,28 @@
           </div>
           <div id="ramp" class="ramp" hidden></div>
         </div>
-        <div class="knobs" aria-label="Taste knobs">
-          <label>Classes <input id="knob-classes" type="range" min="3" max="8" step="1" value="3"> <output id="out-classes"></output></label>
-          <label>Label size <input id="knob-label-size" type="range" min="11" max="28" step="1" value="14"> <output id="out-label-size"></output></label>
-          <label>Labels <input id="knob-labels" type="range" min="1" max="8" step="1" value="4"> <output id="out-labels"></output></label>
-          <label>Stroke <input id="knob-line" type="range" min="0.4" max="4" step="0.1" value="0.8"> <output id="out-line"></output></label>
+        <div class="knobs">
+          <label class="knob">
+            <span>Classes</span>
+            <span class="knob-range"><input id="knob-classes" type="range" min="3" max="8" step="1" value="3" aria-label="Classes"></span>
+            <output id="out-classes" for="knob-classes">3</output>
+          </label>
+          <label class="knob">
+            <span>Size</span>
+            <span class="knob-range"><input id="knob-label-size" type="range" min="11" max="28" step="1" value="14" aria-label="Label size"></span>
+            <output id="out-label-size" for="knob-label-size">14</output>
+          </label>
+          <label class="knob">
+            <span>Labels</span>
+            <span class="knob-range"><input id="knob-labels" type="range" min="1" max="8" step="1" value="4" aria-label="Labels"></span>
+            <output id="out-labels" for="knob-labels">4</output>
+          </label>
+          <label class="knob">
+            <span>Stroke</span>
+            <span class="knob-range"><input id="knob-line" type="range" min="0.4" max="4" step="0.1" value="0.8" aria-label="Stroke"></span>
+            <output id="out-line" for="knob-line">0.8</output>
+          </label>
         </div>
-        <p class="knob-note">Knobs rewrite this taste's specimen and the city. Past the cap, the score drops.</p>
         <ol id="findings" aria-live="polite"></ol>
         <textarea id="style-json" spellcheck="false" aria-label="MapLibre style JSON"></textarea>
       </aside>

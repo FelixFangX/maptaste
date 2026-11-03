@@ -236,6 +236,27 @@ function paintRamp(kind: 'rainbow' | 'taste' | null) {
     rampEl.append(swatch);
   }
 }
+function paintKnob(input: HTMLInputElement, output: HTMLOutputElement, value: number, cap: number | null) {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const span = max - min || 1;
+  const row = input.closest<HTMLElement>('.knob');
+  const shown = Number(input.step) < 1 ? value.toFixed(1) : String(Math.round(value));
+  if (input.value !== shown) input.value = shown;
+  const current = Number(input.value);
+  const over = cap != null && current > cap + 1e-6;
+  input.style.setProperty('--pct', `${Math.min(100, Math.max(0, ((current - min) / span) * 100))}%`);
+  input.style.setProperty('--fill', over ? 'var(--accent)' : 'var(--ink)');
+  output.textContent = shown;
+  if (cap != null && cap >= min && cap <= max) {
+    row?.style.setProperty('--cap', `${((cap - min) / span) * 100}%`);
+    row?.setAttribute('data-capped', '');
+    row?.toggleAttribute('data-over', over);
+  } else {
+    row?.removeAttribute('data-capped');
+    row?.removeAttribute('data-over');
+  }
+}
 function syncChrome() {
   const rules = tastes[taste].composition;
   cta.textContent = `npx maptaste check style.json --taste ${taste}`;
@@ -243,14 +264,10 @@ function syncChrome() {
   markGallery(gallery, taste);
   const tasteButton = document.querySelector<HTMLButtonElement>('[data-fixture="taste"]');
   if (tasteButton) tasteButton.textContent = taste;
-  knobClasses.value = String(knobs.classes);
-  knobLabelSize.value = String(knobs.labelSize);
-  knobLabels.value = String(knobs.labels);
-  knobLine.value = String(knobs.lineWidth);
-  outClasses.textContent = `${knobs.classes} · cap ${rules.maxFillStops}`;
-  outLabelSize.textContent = String(knobs.labelSize);
-  outLabels.textContent = `${knobs.labels} · cap ${rules.maxLabelLayers}`;
-  outLine.textContent = `${knobs.lineWidth} · cap ${rules.maxLineWidth}`;
+  paintKnob(knobClasses, outClasses, knobs.classes, rules.maxFillStops);
+  paintKnob(knobLabelSize, outLabelSize, knobs.labelSize, null);
+  paintKnob(knobLabels, outLabels, knobs.labels, rules.maxLabelLayers);
+  paintKnob(knobLine, outLine, knobs.lineWidth, rules.maxLineWidth);
 }
 function renderFindings(items: { id: string; severity: string; message: string; path?: string }[]) {
   findingsEl.replaceChildren();

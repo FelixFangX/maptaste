@@ -29,6 +29,27 @@ export interface TasteComposition {
   fillOpacityMax: number | null;
   /** editorial: one headline and a real size step. Null skips the rule. */
   hierarchy: { headlineSize: number; maxHeadlines: number; minSpread: number } | null;
+  /** Line layers in the style, not the pixels of one stroke. */
+  maxLineLayers: number;
+}
+
+export type RoadGrammar = 'hairline' | 'atlas' | 'routes' | 'plan' | 'quiet';
+export type TypeGrammar = 'roman' | 'bold' | 'italic-headline';
+
+/** How the plate is built. Stripping the colors should still leave a different map. */
+export interface TasteStage {
+  roads: RoadGrammar;
+  type: TypeGrammar;
+  /** Place-label ranks the study opens with. 1 is countries and capitals. */
+  labelRanks: number;
+  extrusion: boolean;
+  /** Footprints or extrusions. Off leaves land, water, and the strokes. */
+  buildings: boolean;
+  hillshade: boolean;
+  pitch: number;
+  zoom: number;
+  bearing: number;
+  motion: 'none' | 'shoreline';
 }
 
 export interface Taste {
@@ -42,6 +63,7 @@ export interface Taste {
   packAlias?: PackName;
   tokens: TasteTokens;
   composition: TasteComposition;
+  stage: TasteStage;
 }
 
 export const tastes: Record<TasteName, Taste> = {
@@ -49,8 +71,8 @@ export const tastes: Record<TasteName, Taste> = {
     id: 'ink-paper',
     title: 'Ink & paper',
     school: 'Print cartography',
-    summary: 'Print cartography — paper ground, hairline strokes, a short sequential ramp.',
-    chips: 'Paper · hairline · sequential',
+    summary: 'Print plate — flat buildings, hairline roads without casings, roman labels.',
+    chips: 'Flat · hairline · roman',
     packAlias: 'global',
     tokens: {
       paper: '#ebe7df',
@@ -64,14 +86,16 @@ export const tastes: Record<TasteName, Taste> = {
       ground: 'paper', groundMinL: 0.55, groundMaxL: 1,
       maxLabelLayers: 8, contrastMin: 4.5, maxFillSaturation: 0.55, maxFillStops: 6,
       monotonicLightness: true, maxLineWidth: 1.25, maxLineHues: 2, fillOpacityMax: null, hierarchy: null,
+      maxLineLayers: 6,
     },
+    stage: { roads: 'hairline', type: 'roman', labelRanks: 3, extrusion: false, buildings: true, hillshade: false, pitch: 28, zoom: 14.2, bearing: -8, motion: 'none' },
   },
   'night-ops': {
     id: 'night-ops',
     title: 'Night ops',
     school: 'Dark operations',
-    summary: 'Dark operations — night ground, 7:1 labels, restrained diverging.',
-    chips: 'Night ground · 7:1 labels · diverging',
+    summary: 'Operations plate — extruded buildings, bold type, steep pitch, major roads.',
+    chips: 'Extruded · bold · steep',
     tokens: {
       paper: '#121a17',
       ink: '#e7f6ec',
@@ -85,14 +109,16 @@ export const tastes: Record<TasteName, Taste> = {
       ground: 'dark', groundMinL: 0, groundMaxL: 0.15,
       maxLabelLayers: 8, contrastMin: 7, maxFillSaturation: 0.55, maxFillStops: 5,
       monotonicLightness: false, maxLineWidth: 2.75, maxLineHues: 3, fillOpacityMax: null, hierarchy: null,
+      maxLineLayers: 8,
     },
+    stage: { roads: 'atlas', type: 'bold', labelRanks: 2, extrusion: true, buildings: true, hillshade: false, pitch: 64, zoom: 15.8, bearing: -42, motion: 'shoreline' },
   },
   civic: {
     id: 'civic',
     title: 'Civic',
     school: 'Open-data choropleth',
-    summary: 'Open-data choropleth — neutral paper, few classes, lightness that only moves one way.',
-    chips: 'Neutral paper · 7 classes · one-way lightness',
+    summary: 'Plan — north-up, boundaries heavier than streets, admin labels only.',
+    chips: 'Plan · boundaries · admin',
     tokens: {
       paper: '#f3f5f7',
       ink: '#1f2933',
@@ -105,14 +131,16 @@ export const tastes: Record<TasteName, Taste> = {
       ground: 'paper', groundMinL: 0.55, groundMaxL: 1,
       maxLabelLayers: 7, contrastMin: 4.5, maxFillSaturation: 0.65, maxFillStops: 7,
       monotonicLightness: true, maxLineWidth: 2, maxLineHues: 2, fillOpacityMax: null, hierarchy: null,
+      maxLineLayers: 4,
     },
+    stage: { roads: 'plan', type: 'roman', labelRanks: 2, extrusion: false, buildings: false, hillshade: false, pitch: 0, zoom: 13.6, bearing: 0, motion: 'none' },
   },
   editorial: {
     id: 'editorial',
     title: 'Editorial',
     school: 'Magazine story map',
-    summary: 'Magazine story map — three labels or fewer, one headline, one accent hue.',
-    chips: '≤3 labels · one headline · one hue',
+    summary: 'Story plate — two labels, an italic headline, the street network removed.',
+    chips: 'Two labels · italic · still',
     tokens: {
       paper: '#f7f1e8',
       ink: '#1c1917',
@@ -126,14 +154,16 @@ export const tastes: Record<TasteName, Taste> = {
       maxLabelLayers: 3, contrastMin: 4.5, maxFillSaturation: 0.55, maxFillStops: 4,
       monotonicLightness: true, maxLineWidth: 1.5, maxLineHues: 1, fillOpacityMax: null,
       hierarchy: { headlineSize: 18, maxHeadlines: 1, minSpread: 4 },
+      maxLineLayers: 2,
     },
+    stage: { roads: 'quiet', type: 'italic-headline', labelRanks: 2, extrusion: false, buildings: false, hillshade: false, pitch: 16, zoom: 14.6, bearing: -6, motion: 'none' },
   },
   'cn-metro': {
     id: 'cn-metro',
     title: 'CN metro',
     school: 'Chinese city and transit',
-    summary: 'Chinese city and transit — six labels or fewer, route-colored lines. Alias for --pack cn.',
-    chips: '≤6 labels · route colors · city admin',
+    summary: 'Transit plate — thick routes, minor streets hidden, bold admin labels. Alias for --pack cn.',
+    chips: 'Thick routes · no minor streets',
     packAlias: 'cn',
     tokens: {
       paper: '#f4f1ea',
@@ -148,14 +178,16 @@ export const tastes: Record<TasteName, Taste> = {
       ground: 'paper', groundMinL: 0.55, groundMaxL: 1,
       maxLabelLayers: 6, contrastMin: 4.5, maxFillSaturation: 0.55, maxFillStops: 6,
       monotonicLightness: true, maxLineWidth: 3.5, maxLineHues: 6, fillOpacityMax: null, hierarchy: null,
+      maxLineLayers: 12,
     },
+    stage: { roads: 'routes', type: 'bold', labelRanks: 4, extrusion: false, buildings: false, hillshade: false, pitch: 48, zoom: 13.4, bearing: -24, motion: 'none' },
   },
   'terrain-quiet': {
     id: 'terrain-quiet',
     title: 'Quiet terrain',
     school: 'Hillshade',
-    summary: 'Hillshade — muted earth, translucent fills, no blank white ground.',
-    chips: 'Muted earth · translucent · hillshade',
+    summary: 'Relief — hillshade frame, roads nearly gone, translucent ground.',
+    chips: 'Hillshade · quiet roads',
     tokens: {
       paper: '#e4e0d8',
       ink: '#2c3426',
@@ -168,7 +200,9 @@ export const tastes: Record<TasteName, Taste> = {
       ground: 'muted', groundMinL: 0.45, groundMaxL: 0.78,
       maxLabelLayers: 5, contrastMin: 4.5, maxFillSaturation: 0.42, maxFillStops: 5,
       monotonicLightness: true, maxLineWidth: 1.15, maxLineHues: 2, fillOpacityMax: 0.85, hierarchy: null,
+      maxLineLayers: 4,
     },
+    stage: { roads: 'quiet', type: 'roman', labelRanks: 2, extrusion: false, buildings: false, hillshade: true, pitch: 22, zoom: 6.6, bearing: -12, motion: 'none' },
   },
 };
 
@@ -215,6 +249,13 @@ export function tasteRules(taste: Taste): string {
   ];
   if (c.fillOpacityMax != null) parts.push(`fill opacity ≤ ${c.fillOpacityMax}`);
   if (c.hierarchy) parts.push(`one headline (≥ ${c.hierarchy.headlineSize}) and a size step of ${c.hierarchy.minSpread}`);
+  const stage = taste.stage;
+  parts.push(
+    `≤ ${c.maxLineLayers} line layers`,
+    stage.buildings ? (stage.extrusion ? 'extruded buildings' : 'building footprints on a flat plate') : 'no buildings',
+    `${stage.roads} roads`,
+    `${stage.type} type`,
+  );
   return `${parts.join(', ')}.`;
 }
 
@@ -230,6 +271,7 @@ export function tasteCatalog() {
       packAlias: taste.packAlias ?? null,
       tokens: taste.tokens,
       composition: taste.composition,
+      stage: taste.stage,
       rules: tasteRules(taste),
     };
   });

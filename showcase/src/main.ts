@@ -53,6 +53,9 @@ baseStyle.light = applied.light;
 for (const [index, layer] of baseStyle.layers.entries()) {
   const defined = (values: Record<string, unknown>) => Object.fromEntries(Object.entries(values).filter(([, value]) => value != null));
   Object.assign(layer, { paint: defined(applied.layers[index]!.paint), layout: defined(applied.layers[index]!.layout) });
+  const extrudedOpen = before || tastes[taste].stage.extrusion;
+  if (layer.id === 'building') layer.maxzoom = extrudedOpen ? 14 : 24;
+  if (layer.id === 'building-3d') layer.minzoom = extrudedOpen ? 14 : 24;
 }
 let ready = false;
 let map: maplibregl.Map;
@@ -114,7 +117,13 @@ async function resolvePlace(source: URLSearchParams = params, live = false) {
       if (!params.get(key)?.trim() || !Number.isFinite(value) || value < min || value > max) throw new Error(`Invalid ${key}.`);
       return value;
     };
-    const camera = { center, zoom: number('z', 15.4, 0, 24), pitch: number('pitch', 57, 0, 70), bearing: number('bearing', -32, -360, 360) };
+    const stage = tastes[taste].stage;
+    const camera = {
+      center,
+      zoom: number('z', before ? 15.4 : stage.zoom, 0, 24),
+      pitch: number('pitch', before ? 57 : stage.pitch, 0, 70),
+      bearing: number('bearing', before ? -32 : stage.bearing, -360, 360),
+    };
     view = { ...camera, name };
     if (request !== resolution) return;
     const place = { center, name, query: source.get('place')?.trim() || null };
@@ -187,6 +196,32 @@ function startMap(camera: { center: [number, number]; zoom: number; pitch: numbe
     status.textContent = 'Map could not load. Check your connection and WebGL support.';
   });
   map.on('idle', () => { if (!placeError) status.hidden = true; });
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pulse = (time: number) => {
+    requestAnimationFrame(pulse);
+    if (!ready || reduced || before || tastes[taste].stage.motion !== 'shoreline') return;
+    if (!map.getLayer('maptaste-shoreline')) return;
+    map.setPaintProperty('maptaste-shoreline', 'line-opacity', 0.35 + 0.4 * (0.5 + 0.5 * Math.sin(time / 1400)));
+  };
+  requestAnimationFrame(pulse);
+}
+function syncPlate() {
+  const stage = tastes[taste].stage;
+  const extruded = before || stage.extrusion;
+  if (map.getLayer('building')) map.setLayerZoomRange('building', 13, extruded ? 14 : 24);
+  if (map.getLayer('building-3d')) map.setLayerZoomRange('building-3d', extruded ? 14 : 24, 24);
+  if (map.getLayer('natural_earth')) map.setLayerZoomRange('natural_earth', 0, !before && stage.hillshade ? 9 : 7);
+}
+function frameCamera() {
+  if (!ready) return;
+  const stage = tastes[taste].stage;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  map.easeTo({
+    zoom: before ? 15.4 : stage.zoom,
+    pitch: before ? 57 : stage.pitch,
+    bearing: before ? -32 : stage.bearing,
+    duration: reduced ? 0 : 650,
+  });
 }
 function updateStyle() {
   if (!ready) return;
@@ -197,6 +232,7 @@ function updateStyle() {
   }
   map.setSky(next.sky);
   map.setLight(next.light);
+  syncPlate();
   applied = next;
 }
 const theme = document.querySelector<HTMLButtonElement>('#theme')!;
@@ -330,6 +366,7 @@ function applyFixture(kind: 'rainbow' | 'taste') {
     runCheck();
   } else showTasteSpecimen();
   updateStyle();
+  frameCamera();
 }
 function selectTaste(id: TasteName) {
   taste = id;

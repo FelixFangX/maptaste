@@ -1,7 +1,7 @@
 {
   "name": "maptaste",
   "version": "0.0.1",
-  "description": "Named MapLibre tastes. Stop agents shipping the same default map.",
+  "description": "Named MapLibre tastes. Each school is a plate — roads, type, labels — not a shared palette.",
   "author": "Felix Fang (https://github.com/FelixFangX)",
   "license": "MIT",
   "type": "module",

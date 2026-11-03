@@ -16,12 +16,12 @@ export interface TasteKnobs {
 }
 
 export const defaultKnobs: Record<TasteName, TasteKnobs> = {
-  'ink-paper': { classes: 3, labelSize: 14, labels: 4, lineWidth: 0.8 },
-  'night-ops': { classes: 5, labelSize: 15, labels: 3, lineWidth: 1.6 },
-  civic: { classes: 5, labelSize: 13, labels: 4, lineWidth: 1 },
+  'ink-paper': { classes: 3, labelSize: 14, labels: 3, lineWidth: 0.8 },
+  'night-ops': { classes: 5, labelSize: 16, labels: 2, lineWidth: 1.6 },
+  civic: { classes: 5, labelSize: 13, labels: 2, lineWidth: 1 },
   editorial: { classes: 3, labelSize: 22, labels: 2, lineWidth: 0.7 },
-  'cn-metro': { classes: 4, labelSize: 15, labels: 5, lineWidth: 2.2 },
-  'terrain-quiet': { classes: 5, labelSize: 13, labels: 3, lineWidth: 0.6 },
+  'cn-metro': { classes: 4, labelSize: 15, labels: 4, lineWidth: 2.2 },
+  'terrain-quiet': { classes: 5, labelSize: 13, labels: 2, lineWidth: 0.6 },
 };
 
 export type SpecimenKind = 'rainbow' | 'sequential' | TasteName;
@@ -48,6 +48,12 @@ function fillStops(taste: Taste, classes: number): string[] {
   return sampleRamp(taste.tokens.sequential, classes);
 }
 
+function textFont(taste: Taste, index: number): string[] {
+  if (taste.stage.type === 'bold') return ['Noto Sans Bold'];
+  if (taste.stage.type === 'italic-headline' && index === 0) return ['Noto Sans Italic'];
+  return ['Noto Sans Regular'];
+}
+
 function ramp(colors: readonly string[]): unknown[] {
   const expr: unknown[] = ['interpolate', ['linear'], ['get', 'value']];
   colors.forEach((color, index) => expr.push(index, color));
@@ -71,6 +77,7 @@ function specimen(taste: Taste, knobs: TasteKnobs): StyleDoc {
     source: 'areas',
     layout: {
       'text-field': '{name}',
+      'text-font': textFont(taste, index),
       'text-size': taste.composition.hierarchy ? (index === 0 ? knobs.labelSize : body) : knobs.labelSize,
     },
     paint: { 'text-color': taste.tokens.ink, 'text-halo-color': taste.tokens.halo, 'text-halo-width': 1.25 },

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import { check } from './engine.js';
+import { writeScaffold } from './scaffold.js';
 import { tasteSpecimen } from './specimens.js';
 import { isTaste, packAlias, tasteCatalog, tasteNames, tastes, tasteRules, type Taste } from './tastes.js';
 import type { TasteName } from './types.js';
@@ -9,6 +10,7 @@ const usage = [
   'Usage: maptaste tastes [--format json|text]',
   '       maptaste tokens [--taste <name>] [--format json|text]',
   '       maptaste example --taste <name>',
+  '       maptaste apply --taste <name> [--out <dir>]',
   '       maptaste check <file.json> [--format json|text] [--taste <name>] [--pack global|cn]',
   '       maptaste mcp',
   '',
@@ -95,6 +97,13 @@ async function main() {
     const opts = pairs(rest);
     formatOf(opts, ['--taste']);
     console.log(JSON.stringify(tasteSpecimen(requireTaste(opts)), null, 2));
+    return;
+  }
+  if (command === 'apply') {
+    const opts = pairs(rest);
+    formatOf(opts, ['--taste', '--out']);
+    const written = await writeScaffold(requireTaste(opts), opts['--out'] ?? 'maptaste');
+    console.log(written.join('\n'));
     return;
   }
   if (command !== 'check' || !rest[0] || rest[0].startsWith('--')) throw new Error(usage);

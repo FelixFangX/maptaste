@@ -6,7 +6,7 @@ description: Build an ink-paper MapLibre style. --pack global is the alias for t
 This skill selects the `ink-paper` taste. `--pack global` is the alias. For the full catalog, follow `maptaste` and run `npx maptaste tastes`.
 
 1. Read `npx maptaste tokens --taste ink-paper`.
-2. Paper ground, hairline strokes, a short sequential ramp, at most eight text layers, at most two line hues. Lightness moves one way. Do not use a night ground or a route-colored subway diagram here.
+2. Flat plate. Hairline roads, no casings, roman labels (not bold, not italic), paper ground, at most eight text layers, at most six line layers, at most two line hues. Lightness moves one way. Do not extrude the city, do not use a night ground, and do not draw a route diagram here.
 3. Build MapLibre style JSON. Declare light and dark variants in metadata.
 4. Run `npx maptaste check style.json --taste ink-paper`. `--pack global` checks the same taste.
 

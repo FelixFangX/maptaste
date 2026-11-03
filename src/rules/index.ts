@@ -8,5 +8,7 @@ import { labelHierarchy } from './label-hierarchy.js';
 import { lineWeight } from './line-weight.js';
 import { fillOpacity } from './fill-opacity.js';
 import { lineChroma } from './line-chroma.js';
+import { lineCount } from './line-count.js';
+import { typeface } from './typeface.js';
 
-export const rules = [rainbowChoropleth, labelContrast, darkMode, labelDensity, ground, fillDiscipline, labelHierarchy, lineWeight, fillOpacity, lineChroma];
+export const rules = [rainbowChoropleth, labelContrast, darkMode, labelDensity, ground, fillDiscipline, labelHierarchy, lineWeight, fillOpacity, lineChroma, lineCount, typeface];

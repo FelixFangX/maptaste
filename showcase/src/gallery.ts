@@ -37,10 +37,26 @@ export function renderGallery(root: HTMLElement, selected: TasteName, onSelect: 
     const school = document.createElement('span');
     school.className = 'taste-school';
     school.textContent = taste.school;
+    const grammar = document.createElement('span');
+    grammar.className = 'grammar';
+    grammar.setAttribute('aria-hidden', 'true');
+    const stroke = document.createElement('i');
+    stroke.className = 'grammar-stroke';
+    stroke.style.height = `${Math.max(2, taste.composition.maxLineWidth * 2.4)}px`;
+    const marks = document.createElement('span');
+    marks.className = 'grammar-marks';
+    for (let index = 0; index < taste.stage.labelRanks; index += 1) {
+      const mark = document.createElement('i');
+      const headline = taste.stage.type === 'italic-headline' && index === 0;
+      mark.style.height = headline ? '14px' : `${5 + (taste.stage.labelRanks - index) * 2}px`;
+      mark.style.width = taste.stage.type === 'bold' ? '3px' : '1.5px';
+      marks.append(mark);
+    }
+    grammar.append(stroke, marks);
     const chips = document.createElement('span');
     chips.className = 'taste-chips';
     chips.textContent = taste.chips;
-    card.append(pair, name, school, chips);
+    card.append(pair, grammar, name, school, chips);
     card.addEventListener('click', () => onSelect(id));
     root.append(card);
   }

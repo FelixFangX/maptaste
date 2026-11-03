@@ -127,6 +127,61 @@ function buildingColor(colors: readonly string[]): ExpressionSpecification {
   return expr as ExpressionSpecification;
 }
 
+type LineKind = 'major' | 'medium' | 'minor' | 'casing' | 'boundary' | 'water' | 'rail' | 'other';
+
+function lineKind(id: string): LineKind {
+  if (/boundary/.test(id)) return 'boundary';
+  if (/waterway|shoreline/.test(id)) return 'water';
+  if (/rail|transit/.test(id)) return 'rail';
+  if (/casing/.test(id)) return 'casing';
+  if (/motorway/.test(id)) return 'major';
+  if (/trunk|primary|secondary|tertiary/.test(id)) return 'medium';
+  if (/service|track|path|minor|link|street|pedestrian/.test(id)) return 'minor';
+  return 'other';
+}
+
+/** Null hides the stroke. Before keeps the noisy atlas so the taste can remove it. */
+function lineScale(roads: (typeof tastes)[TasteName]['stage']['roads'], kind: LineKind, before: boolean): number | null {
+  if (before) return kind === 'casing' ? 0.7 : 1.15;
+  switch (roads) {
+    case 'hairline':
+      if (kind === 'casing' || kind === 'rail' || kind === 'minor') return null;
+      if (kind === 'major') return 0.5;
+      if (kind === 'medium') return 0.32;
+      return 0.4;
+    case 'atlas':
+      if (kind === 'minor') return null;
+      if (kind === 'major') return 1.25;
+      if (kind === 'casing') return 1.05;
+      return 0.75;
+    case 'routes':
+      if (kind === 'minor' || kind === 'medium' || kind === 'casing') return null;
+      if (kind === 'major' || kind === 'rail') return 1.7;
+      return 0.45;
+    case 'plan':
+      if (kind === 'minor' || kind === 'casing' || kind === 'rail') return null;
+      if (kind === 'boundary') return 2.6;
+      if (kind === 'major') return 1.6;
+      if (kind === 'medium') return 1.15;
+      return 0.55;
+    case 'quiet':
+      if (kind === 'boundary' || kind === 'water') return 0.4;
+      return null;
+  }
+}
+
+function strokeWidth(stroke: number, scale: number, zoom: number): ExpressionSpecification {
+  const at = Math.max(0.45, stroke * scale);
+  const low = Math.max(0.3, at * 0.72);
+  return ['interpolate', ['linear'], ['zoom'], Math.max(3, zoom - 2), low, zoom + 2, at];
+}
+
+function textFont(type: (typeof tastes)[TasteName]['stage']['type'], rank: number): string[] {
+  if (type === 'bold') return ['Noto Sans Bold'];
+  if (type === 'italic-headline' && rank <= 1) return ['Noto Sans Italic'];
+  return ['Noto Sans Regular'];
+}
+
 function lineColor(id: string, tone: Tone): string {
   if (tone.routeRoads && !/casing/.test(id)) {
     if (/transit|rail/.test(id) && !/hatch/.test(id)) return '#1f8a4c';
@@ -148,8 +203,11 @@ function lineColor(id: string, tone: Tone): string {
 
 export function cityTheme(layers: StyleSpecification['layers'], input: ThemeInput): CityTheme {
   const tone = input.before ? enemyTone() : tasteTone(input.taste, input.dark, input.classes);
+  const stage = tastes[input.taste].stage;
   const stroke = input.before ? 2.4 : input.lineWidth;
   const buildings = buildingColor(input.before ? rainbowScale : tone.building);
+  const extruded = input.before || stage.extrusion;
+  const showBuildings = input.before || stage.buildings;
   const landColor: Record<string, string> = {
     park: tone.park, landcover_wood: tone.wood, landcover_grass: tone.grass, landcover_sand: tone.sand,
     landcover_ice: tone.ice, landcover_wetland: tone.wetland, landuse_residential: tone.residential,
@@ -167,7 +225,11 @@ export function cityTheme(layers: StyleSpecification['layers'], input: ThemeInpu
       const paint: PaintBag = { ...layer.paint };
       const layout: PaintBag = { ...layer.layout };
       if (layer.type === 'background') paint['background-color'] = tone.paper;
-      if (layer.type === 'raster') layout.visibility = 'none';
+      if (layer.type === 'raster') {
+        const hill = !input.before && stage.hillshade;
+        layout.visibility = hill ? 'visible' : 'none';
+        paint['raster-opacity'] = hill ? 0.82 : 0;
+      }
       if (layer.type === 'fill' || layer.type === 'fill-extrusion') {
         const color = id === 'water' ? tone.water : landColor[id] ?? tone.ground;
         if (layer.type === 'fill') {
@@ -176,33 +238,47 @@ export function cityTheme(layers: StyleSpecification['layers'], input: ThemeInpu
           if ('fill-pattern' in paint) paint['fill-pattern'] = undefined;
           const quiet = !input.before && input.taste === 'terrain-quiet';
           paint['fill-opacity'] = quiet ? 0.62 : (id === 'landcover_wood' || id === 'landcover_grass' ? 0.7 : 1);
+          if (id.startsWith('landuse_')) layout.visibility = !input.before && stage.roads === 'quiet' && !stage.hillshade ? 'none' : 'visible';
         }
       }
-      if (layer.type === 'line') paint['line-color'] = lineColor(id, tone);
-      if (id === 'maptaste-shoreline' || id === 'boundary_2' || id === 'boundary_3' || id === 'park_outline') {
-        paint['line-width'] = ['interpolate', ['linear'], ['zoom'], 8, Math.max(0.15, stroke * 0.35), 15, stroke];
-      }
-      if (id === 'maptaste-shoreline') {
-        paint['line-color'] = tone.shoreline;
-        paint['line-opacity'] = 0.75;
+      if (layer.type === 'line') {
+        const scale = lineScale(stage.roads, lineKind(id), input.before);
+        paint['line-color'] = id === 'maptaste-shoreline' ? tone.shoreline : lineColor(id, tone);
+        if (!input.before && stage.roads === 'plan') {
+          const kind = lineKind(id);
+          if (kind === 'boundary' || kind === 'major') paint['line-color'] = tone.ink;
+          else if (kind === 'medium') paint['line-color'] = mixHex(tone.paper, tone.ink, 0.62);
+        }
+        layout.visibility = scale == null ? 'none' : 'visible';
+        if (scale != null) {
+          paint['line-width'] = strokeWidth(stroke, scale, input.before ? 15.4 : stage.zoom);
+          paint['line-opacity'] = id === 'maptaste-shoreline' ? 0.75 : 1;
+        }
       }
       if (layer.type === 'symbol') {
         const rank = ranks.findIndex(group => group.includes(id));
-        if (id === 'poi_transit') layout.visibility = !input.before && tone.routeRoads ? 'visible' : 'none';
-        else if (/housenumber|shield|airport|one_way|poi_r/.test(id) || /^poi/.test(id)) layout.visibility = 'none';
-        else if (rank >= 0) layout.visibility = input.before || rank < input.labelRanks ? 'visible' : 'none';
+        const poi = /^poi/.test(id);
+        if (input.before) layout.visibility = /housenumber|shield|one_way/.test(id) ? 'none' : 'visible';
+        else if (id === 'poi_transit' && stage.roads === 'routes') layout.visibility = 'visible';
+        else if (poi || /housenumber|shield|airport|one_way/.test(id)) layout.visibility = 'none';
+        else if (rank >= 0) layout.visibility = rank < input.labelRanks ? 'visible' : 'none';
+        else layout.visibility = 'none';
         paint['text-color'] = tone.ink;
         paint['text-halo-color'] = tone.paper;
-        paint['text-halo-width'] = input.before ? 0.6 : 1.2;
+        paint['text-halo-width'] = input.before ? 0.4 : stage.type === 'bold' ? 0.9 : 1.35;
+        layout['text-font'] = input.before ? ['Noto Sans Regular'] : textFont(stage.type, rank < 0 ? 9 : rank);
+        layout['text-letter-spacing'] = !input.before && stage.roads === 'hairline' && stage.type === 'roman' ? 0.12 : 0;
         if (/^label_/.test(id)) {
-          const editorialBody = !input.before && input.taste === 'editorial' && rank > 0;
-          layout['text-size'] = input.before ? null : (editorialBody ? 12 : input.labelSize);
+          const body = !input.before && stage.type === 'italic-headline' && rank > 1;
+          layout['text-size'] = input.before ? null : (body ? 12 : input.labelSize);
         }
       }
+      if (layer.id === 'building') layout.visibility = showBuildings && !extruded ? 'visible' : 'none';
+      if (layer.id === 'building-3d') layout.visibility = showBuildings && extruded ? 'visible' : 'none';
       if ((layer.type === 'fill' || layer.type === 'fill-extrusion') && layer['source-layer'] === 'building') {
         const key = layer.type === 'fill' ? 'fill-color' : 'fill-extrusion-color';
         paint[key] = buildings;
-        if (!input.before && input.taste === 'terrain-quiet' && layer.type === 'fill-extrusion') paint['fill-extrusion-opacity'] = 0.78;
+        if (!input.before && stage.hillshade && layer.type === 'fill-extrusion') paint['fill-extrusion-opacity'] = 0.55;
       }
       return { id, paint, layout };
     }),

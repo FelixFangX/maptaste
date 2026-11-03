@@ -67,7 +67,10 @@
       "source": "areas",
       "layout": {
         "text-field": "{name}",
-        "text-size": 15
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 16
       },
       "paint": {
         "text-color": "#e7f6ec",
@@ -81,21 +84,10 @@
       "source": "areas",
       "layout": {
         "text-field": "{name}",
-        "text-size": 15
-      },
-      "paint": {
-        "text-color": "#e7f6ec",
-        "text-halo-color": "#0c1210",
-        "text-halo-width": 1.25
-      }
-    },
-    {
-      "id": "places-2",
-      "type": "symbol",
-      "source": "areas",
-      "layout": {
-        "text-field": "{name}",
-        "text-size": 15
+        "text-font": [
+          "Noto Sans Bold"
+        ],
+        "text-size": 16
       },
       "paint": {
         "text-color": "#e7f6ec",

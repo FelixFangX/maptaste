@@ -1,7 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { check } from '../src/index.js';
-import { tasteSpecimen } from '../src/specimens.js';
+import { defaultKnobs, tasteSpecimen } from '../src/specimens.js';
+import { writeScaffold } from '../src/scaffold.js';
 import { packAlias, tasteNames, tasteRules, tastes } from '../src/tastes.js';
 import type { TasteName } from '../src/types.js';
 
@@ -76,6 +79,34 @@ describe('named tastes', () => {
     const heavy = tasteSpecimen('ink-paper', { lineWidth: 2 });
     expect(check(heavy, { taste: 'ink-paper' }).findings.some(finding => finding.id === 'MT009')).toBe(true);
     expect(check(heavy, { taste: 'cn-metro' }).findings.some(finding => finding.id === 'MT009')).toBe(false);
+  });
+
+  it('keeps a different plate when the colors are ignored', () => {
+    expect(new Set(tasteNames.map(id => tastes[id].stage.roads)).size).toBeGreaterThanOrEqual(4);
+    expect(new Set(tasteNames.map(id => tastes[id].stage.type)).size).toBe(3);
+    const pitches = tasteNames.map(id => tastes[id].stage.pitch);
+    expect(Math.max(...pitches) - Math.min(...pitches)).toBeGreaterThan(40);
+    expect(tasteNames.filter(id => tastes[id].stage.extrusion)).toEqual(['night-ops']);
+    expect(tasteNames.filter(id => tastes[id].stage.buildings)).toEqual(['ink-paper', 'night-ops']);
+    expect(tasteNames.filter(id => tastes[id].stage.hillshade)).toEqual(['terrain-quiet']);
+    for (const id of tasteNames) expect(defaultKnobs[id].labels).toBe(tastes[id].stage.labelRanks);
+  });
+
+  it('rejects another plate even when the colors could be swapped', () => {
+    expect(check(tasteSpecimen('night-ops'), { taste: 'ink-paper' }).findings.some(finding => finding.id === 'MT013')).toBe(true);
+    expect(check(tasteSpecimen('editorial'), { taste: 'ink-paper' }).findings.some(finding => finding.id === 'MT013')).toBe(true);
+    expect(check(tasteSpecimen('cn-metro'), { taste: 'editorial' }).findings.some(finding => finding.id === 'MT012')).toBe(true);
+  });
+
+  it('writes tokens and a style that passes that taste', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'maptaste-'));
+    const [tokensPath, stylePath] = await writeScaffold('civic', dir);
+    const tokens = JSON.parse(readFileSync(tokensPath, 'utf8'));
+    const style = JSON.parse(readFileSync(stylePath, 'utf8'));
+    expect(tokens.stage.roads).toBe('plan');
+    expect(tokens.stage.type).toBe('roman');
+    expect(check(style, { taste: 'civic' }).findings).toEqual([]);
+    expect(check(style, { taste: 'night-ops' }).findings.some(finding => finding.id === 'MT013' || finding.id === 'MT005')).toBe(true);
   });
 
   it('asks terrain for translucent muted fills and lets civic be more chromatic', () => {

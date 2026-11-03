@@ -63,6 +63,9 @@
       "source": "areas",
       "layout": {
         "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
         "text-size": 14
       },
       "paint": {
@@ -77,6 +80,9 @@
       "source": "areas",
       "layout": {
         "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
         "text-size": 14
       },
       "paint": {
@@ -91,20 +97,9 @@
       "source": "areas",
       "layout": {
         "text-field": "{name}",
-        "text-size": 14
-      },
-      "paint": {
-        "text-color": "#1a2a4a",
-        "text-halo-color": "#ebe7df",
-        "text-halo-width": 1.25
-      }
-    },
-    {
-      "id": "places-3",
-      "type": "symbol",
-      "source": "areas",
-      "layout": {
-        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
         "text-size": 14
       },
       "paint": {

@@ -11,22 +11,23 @@ npx maptaste check style.json --taste ink-paper
 
 ## Tastes
 
-| Taste | School | What the check enforces |
+| Taste | School | What stays different with the colors removed |
 | --- | --- | --- |
-| `ink-paper` | Print cartography | Paper ground, hairline strokes, sequential lightness, ≤ 8 text layers, ≤ 2 line hues. `--pack global` |
-| `night-ops` | Dark operations | Near-black ground, label contrast ≥ 7, diverging fills allowed, heavier strokes |
-| `civic` | Open-data choropleth | Neutral paper, ≤ 7 classes, lightness that only moves one way |
-| `editorial` | Magazine story map | ≤ 3 text layers, one headline, a real size step, one line hue |
-| `cn-metro` | Chinese city and transit | ≤ 6 text layers, route-colored lines, sequential data fills. `--pack cn` |
-| `terrain-quiet` | Hillshade | Muted ground, low saturation, translucent fills, hairline strokes |
+| `ink-paper` | Print cartography | Flat plate, hairline roads, no casings, roman labels. `--pack global` |
+| `night-ops` | Dark operations | Extruded buildings, bold type, steep pitch, major roads, contrast ≥ 7 |
+| `civic` | Open-data choropleth | North-up plan, boundaries heavier than streets, admin labels |
+| `editorial` | Magazine story map | Street network removed, one italic headline, ≤ 3 text layers, ≤ 2 line layers |
+| `cn-metro` | Chinese city and transit | Thick routes, minor streets hidden, bold admin labels. `--pack cn` |
+| `terrain-quiet` | Hillshade | Relief frame, roads nearly gone, translucent fills, muted ground |
 
 ```sh
 npx maptaste tastes
 npx maptaste tokens --taste editorial
 npx maptaste example --taste night-ops
+npx maptaste apply --taste civic
 ```
 
-`tastes` lists the catalog. `tokens --taste` prints that school's colors and the rules sentence the checker uses. `example --taste` prints a style that scores 100 under that taste. Each taste is tokens plus composition — ground, label cap, contrast, class count, stroke width, line hues — not a color swap of the same map.
+`tastes` lists the catalog. `tokens --taste` prints that school's colors and the rules sentence the checker uses. `example --taste` prints a style that scores 100 under that taste. `apply --taste` writes `<taste>.tokens.json` and `<taste>.style.json` (default directory `maptaste/`). Each taste is a plate: which roads stay, roman or bold or one italic headline, flat or extruded, plus the color tokens. Swapping a color array onto the same street atlas is not the taste.
 
 ## Pack aliases
 
@@ -115,14 +116,16 @@ Caps below are the taste's own numbers (`npx maptaste tokens --taste <name>`). M
 | MT009 | warn | line-weight | A numeric line width is heavier than the taste's stroke cap |
 | MT010 | warn | fill-opacity | terrain-quiet only: a fill is too opaque for a hillshade to read |
 | MT011 | warn | line-chroma | Line colors span more hue sectors than the taste allows |
+| MT012 | warn | line-count | More line layers than the plate allows |
+| MT013 | warn | typeface | Declared `text-font` is bold or italic on a roman plate, or not the face that plate asks for |
 
-`ink-paper` allows 8 text layers. `cn-metro` allows 6. `editorial` allows 3 and requires one headline. A style can pass one taste and fail another with the same colors, because the caps are different.
+`ink-paper` allows 8 text layers and 6 line layers, set in roman. `editorial` allows 3 text layers, 2 line layers, and one italic headline. `night-ops` is bold. A style can pass one taste and fail another with the same colors, because the plate is different. Missing `text-font` is not a finding. A face that is set and wrong is.
 
 ## Showcase
 
 [maptaste.ledring.dev](https://maptaste.ledring.dev)
 
-The first screen is the catalog: six tastes, each with a before ramp and that taste's after ramp. Choosing one opens the city study. Before is the rainbow enemy. After uses that taste's ground, ramp, labels, and — for `cn-metro` — route-colored roads. Classes, label size, label count, and stroke are knobs. Past the taste's cap, the score on the specimen drops.
+The first screen is the catalog: six tastes, each with a before ramp, that taste's after ramp, and a plate mark (stroke weight, label ranks). Choosing one opens the city study on that plate's camera. Before is the noisy rainbow atlas. After drops casings, minor streets, or the whole street network, changes the type, and — for night-ops — stands the buildings up. Terrain opens on the hillshade, not the towers. Classes, label size, label count, and stroke are knobs. Past the taste's cap, the score on the specimen drops.
 
 ![Before / After demo](docs/demo.gif)
 

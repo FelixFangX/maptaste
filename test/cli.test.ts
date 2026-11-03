@@ -1,5 +1,7 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, it } from 'vitest';
 it('returns correct CLI exit codes and JSON', async () => {
  execFileSync('pnpm',['build']);
@@ -28,6 +30,11 @@ it('returns correct CLI exit codes and JSON', async () => {
  const example = run(['example','--taste','night-ops']);
  expect(example.status).toBe(0);
  expect(JSON.parse(example.stdout).metadata['maptaste:taste']).toBe('night-ops');
+ const out = mkdtempSync(join(tmpdir(), 'maptaste-apply-'));
+ const applied = run(['apply','--taste','editorial','--out', out]);
+ expect(applied.status).toBe(0);
+ expect(JSON.parse(readFileSync(join(out, 'editorial.tokens.json'), 'utf8')).stage.type).toBe('italic-headline');
+ expect(JSON.parse(readFileSync(join(out, 'editorial.style.json'), 'utf8')).metadata['maptaste:taste']).toBe('editorial');
  const tasted = run(['check','test/fixtures/tastes/terrain-quiet.json','--taste','terrain-quiet','--format','json']);
  expect(tasted.status).toBe(0);
  expect(JSON.parse(tasted.stdout).score).toBe(100);

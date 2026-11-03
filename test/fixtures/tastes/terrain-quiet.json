@@ -68,6 +68,9 @@
       "source": "areas",
       "layout": {
         "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
         "text-size": 13
       },
       "paint": {
@@ -82,20 +85,9 @@
       "source": "areas",
       "layout": {
         "text-field": "{name}",
-        "text-size": 13
-      },
-      "paint": {
-        "text-color": "#2c3426",
-        "text-halo-color": "#e4e0d8",
-        "text-halo-width": 1.25
-      }
-    },
-    {
-      "id": "places-2",
-      "type": "symbol",
-      "source": "areas",
-      "layout": {
-        "text-field": "{name}",
+        "text-font": [
+          "Noto Sans Regular"
+        ],
         "text-size": 13
       },
       "paint": {

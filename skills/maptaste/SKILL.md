@@ -13,9 +13,10 @@ Do not ship the default MapLibre look. Pick one taste, then build and check agai
    - A magazine or story map → `editorial`.
    - A Chinese city or transit map → `cn-metro` (`--pack cn` is this alias).
    - Hillshade or quiet terrain → `terrain-quiet`.
-3. Copy a passing style with `npx maptaste example --taste <name>` and replace the empty GeoJSON with the real data. Keep that taste's ground, stroke cap, label cap, and ramp.
-4. Run `npx maptaste check style.json --taste <name>`. Fix errors before shipping. Warnings are still findings.
+3. Install that plate with `npx maptaste apply --taste <name>`. It writes tokens and a style that already passes. Replace the empty GeoJSON with the real data. Keep the plate: which roads exist, roman / bold / one italic headline, flat or extruded, and the caps.
+4. Or print the style with `npx maptaste example --taste <name>`.
+5. Run `npx maptaste check style.json --taste <name>`. Fix errors before shipping. Warnings are still findings.
 
-A taste is tokens plus composition: ground luminance, how many text layers, contrast, class count, whether lightness may reverse, stroke width, how many line hues, and (for terrain-quiet) fill opacity. Swapping a color array without those rules is not the taste.
+A taste is a plate plus tokens. The plate is road grammar, type, label count, line-layer count, extrusion, and ground. Swapping a color array onto the same street atlas is not the taste. Stripping the colors should still leave a different map.
 
 Rainbow fills are an error in every taste (MT001). Layout should explain itself. These checks are heuristics, not schema validation or a substitute for looking at the map.

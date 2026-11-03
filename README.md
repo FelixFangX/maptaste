@@ -1,23 +1,17 @@
-# maptaste
+# Stop agents shipping rainbow MapLibre choropleths.
 
-Two style-pack skills for coding agents, plus a `maptaste check` CLI for MapLibre style JSON, an MCP server, and a local Before / After showcase.
+[![npm](https://img.shields.io/npm/v/maptaste)](https://www.npmjs.com/package/maptaste)
+[![demo](https://img.shields.io/badge/demo-maptaste.ledring.dev-555555)](https://maptaste.ledring.dev)
+
+![Before / After demo](docs/demo.gif)
 
 | Before | After | Dark |
 | --- | --- | --- |
 | ![Before](docs/example-harsh.png) | ![After](docs/example-taste.png) | ![After dark](docs/example-dark.png) |
 
-![Before / After demo](docs/demo.gif)
-
-## Install the skill
-
-Choose a pack for the map's audience:
-
 ```sh
-npx skills add FelixFangX/maptaste --skill maptaste-global
-npx skills add FelixFangX/maptaste --skill maptaste-cn
+npx maptaste check style.json
 ```
-
-For manual installation, copy the folder from [skills/](skills/) into your agent's skills directory. Ask the agent to follow the selected skill when building or reviewing a MapLibre style.
 
 ## Check
 
@@ -27,9 +21,9 @@ npx maptaste check style.json --pack cn
 npx maptaste check style.json --pack cn --format json
 ```
 
-Requires Node 20 or newer. These are taste heuristics, not a full MapLibre schema validator; expressions and real rendering still need visual review.
+Node 20 or newer. The four rules are heuristics. Render the map before trusting a score.
 
-To run from a checkout instead, use pnpm:
+From a checkout:
 
 ```sh
 pnpm install
@@ -37,7 +31,7 @@ pnpm build
 node dist/cli.js check test/fixtures/bad-style.json --pack global
 ```
 
-Actual output from that fixture check:
+That fixture prints:
 
 ```text
 ERROR MT001 layers[1].paint.fill-color: Rainbow choropleth obscures ordering; use a restrained sequential or diverging scale.
@@ -48,26 +42,32 @@ WARN MT004 layers: Excessive label density; prioritize places by zoom and reduce
 Score: 56/100 — 1 errors, 11 warnings, 1 info
 ```
 
-Exit codes: `0` passes, `1` means errors were found, and `2` means invalid input. Warnings and informational findings do not fail the command by themselves. JSON output includes `{ findings, score, summary }`.
+The skipped lines are the same MT002 warning on `layers[3]` through `layers[11]`.
 
-Scores start at 100, subtract 10 per error, 3 per warning, and 1 per informational finding, with a floor of zero. Static colors support hex, `rgb()`, and common names. Dynamic colors, zoom visibility, and feature counts are not evaluated.
+Exit 0 when no finding is an error, 1 when any finding is an error, 2 when the file or the flags are invalid. Warnings and info are printed and leave the exit code at 0. `--format json` prints `{ findings, score, summary }`.
+
+The score starts at 100. Each error subtracts 10, each warning 3, each info 1, with a floor of 0. Colors read: `#rgb`, `#rrggbb`, `rgb()`, and white, black, red, orange, yellow, green, blue, purple, cyan, including those literals inside an expression. `rgba()`, `hsl()`, zoom, and feature counts are ignored.
 
 ```ts
 import { check } from 'maptaste';
+
 const result = check({ version: 8, layers: [] }, { pack: 'global' });
 ```
 
+## Skills
+
+```sh
+npx skills add FelixFangX/maptaste --skill maptaste-global
+npx skills add FelixFangX/maptaste --skill maptaste-cn
+```
+
+Or copy `skills/maptaste-global` or `skills/maptaste-cn` into the agent's skills directory and tell it to follow that skill.
+
 ## Packs
 
-| Choice | global | cn |
-| --- | --- | --- |
-| Tokens | paper `#ebe7df`, void `#0b0b0b`, navy `#1a2a4a`, pale blue `#9eb6d4` | Same tokens |
-| Choropleth | Prefer sequential or diverging scales over rainbow fills | Same |
-| Labels | Place names by zoom; avoid competing text | Administrative label hierarchy (行政区); tighter label budget |
-| Label density | Warn above 8 text symbol layers | Warn above 6 text symbol layers |
-| Dark | Declare dark background or theme variants in metadata | Same |
+Both packs use paper `#ebe7df`, void `#0b0b0b`, navy `#1a2a4a`, pale blue `#9eb6d4`.
 
-Both packs treat layout as something that should explain itself. Helper-label spam is out of scope for the checker but discouraged in the skills.
+`global` orders place names by zoom and warns above 8 text symbol layers. `cn` uses an administrative label hierarchy (行政区) and warns above 6. A dark background counts as dark mode, and so does metadata whose key contains `dark`, `theme`, or `styles` when the value is set. The skills say to leave helper labels out. The checker does not look for them.
 
 ## Rules
 
@@ -76,15 +76,15 @@ Both packs treat layout as something that should explain itself. Helper-label sp
 | MT001 | error | rainbow-choropleth | Fill colors span at least four saturated hue sectors |
 | MT002 | warn | label-contrast | Static label color has contrast below 4.5 against a halo or background |
 | MT003 | info | dark-mode | No dark background or theme declaration in metadata |
-| MT004 | warn | label-density | More than 8 text symbol layers (6 for cn), or 3 large text defaults |
-
-Metadata keys containing `dark`, `theme`, or `styles` count as theme consideration.
+| MT004 | warn | label-density | More than 8 text symbol layers (6 for cn), or 3 or more numeric text sizes of 24 or higher |
 
 ## Showcase
 
-Type a place or pick a preset in the showcase, or use MCP `preview_place` to open a place directly.
+[maptaste.ledring.dev](https://maptaste.ledring.dev)
 
-Agents can preview any place with the same Before/After themes using a name or coordinates. Place names may be English, Chinese, or other local proper nouns; optional `lang` shapes the caption language. Informal/meme names may be resolved via Workers AI when Nominatim misses or mismatches, under daily AI quotas (2,000 globally and 40 per IP).
+One OpenFreeMap city at pitch 57°. Before colors building height with a rainbow ramp. After uses a sequential blue ramp. Light background is `#f7f8f6`, dark is `#0b0b0b`. Light / Dark changes paint and leaves the camera. Tiles, glyphs, and sprites come from OpenFreeMap with no API key. The page needs a network connection and WebGL. Attribution stays on the map.
+
+Presets: San Francisco, Tokyo, 上海, 外滩, London, Paris. Other place names can be English, Chinese, or another local name. `lang` sets the caption language. Workers AI expands informal names, and names Nominatim misses or mismatches (2,000 per day, 40 per IP). Sessions are capped at 5,000 per day and 20 per IP.
 
 - https://maptaste.ledring.dev/?place=Tokyo
 - https://maptaste.ledring.dev/?place=上海
@@ -92,12 +92,7 @@ Agents can preview any place with the same Before/After themes using a name or c
 - https://maptaste.ledring.dev/?ll=139.7671,35.6812&place=Tokyo
 - https://maptaste.ledring.dev/?place=Paris&lang=zh
 
-
-A Vite + MapLibre demo on real OpenFreeMap buildings at pitch 57°. Before and After share one composed city: Before colors building height with a rainbow choropleth, After uses a sequential blue ramp on a paper or void base. Light / Dark are paint-only toggles that keep the camera.
-
-Beside the map, Try check loads a rainbow or sequential MapLibre style fixture — or paste your own — and runs the same `check` engine as the CLI, with a 0–100 score and MT findings. Copy style puts the current city and view (After by default) on the clipboard as MapLibre style JSON.
-
-Live: [maptaste.ledring.dev](https://maptaste.ledring.dev) (daily per-IP session quota).
+Try check runs this same `check` on the Rainbow fixture, the Sequential fixture, or style JSON you paste. Copy style copies the current city and camera as MapLibre style JSON. After is the default.
 
 ```sh
 cd showcase
@@ -105,17 +100,15 @@ pnpm install
 pnpm dev
 ```
 
-Tiles, glyphs, and sprites come from OpenFreeMap without an API key. An internet connection and WebGL are required. Map attribution stays visible.
-
 ## MCP
 
-Once the package is published, start the server with:
+Published as `maptaste@0.0.1`.
 
 ```sh
 npx -y maptaste mcp
 ```
 
-Claude Desktop or Cursor:
+Cursor or Claude Desktop:
 
 ```json
 {
@@ -128,13 +121,14 @@ Claude Desktop or Cursor:
 }
 ```
 
-The same server is the `maptaste-mcp` bin (`npx -y --package maptaste maptaste-mcp`). From a checkout: `pnpm install && pnpm build`, then `node dist/cli.js mcp` or `node dist/mcp/server.js`.
+`maptaste-mcp` is the same server (`npx -y --package maptaste maptaste-mcp`). From a checkout: `pnpm install && pnpm build`, then `node dist/cli.js mcp` or `node dist/mcp/server.js`.
 
-Tools: `check_taste` accepts `{ "style": {} }` or `{ "styleJson": "..." }`; `validate_style` checks object / version / layers structure; `preview_info` locates the showcase; `preview_place` returns a hosted URL from `place` or `ll` (lng,lat), with optional `zoom`, `mode`, `theme`, and `lang`. `place` accepts English, Chinese, and other local proper nouns; named places resolve in the browser; `center` is null until resolved. Validation is intentionally basic.
+- `check_taste` takes `{ "style": {} }` or `{ "styleJson": "..." }`. The pack is global. The tool has no pack argument.
+- `validate_style` checks for an object with `version` and a `layers` array.
+- `preview_place` takes `place` or `ll` (`lng,lat`), and optional `zoom`, `mode` (`before` or `after`), `theme` (`light` or `dark`), and `lang`. It returns a `https://maptaste.ledring.dev/` URL. A name is resolved in the browser, so `center` is null until then.
+- `preview_info` points at the local showcase: `cd showcase && pnpm install && pnpm dev`.
 
-## Status
-
-Early (0.x). Expect rule and pack changes between minor versions. MapLibre style JSON only for now.
+0.0.1. Thresholds can change in any 0.x release. Input is MapLibre style JSON.
 
 ## License
 

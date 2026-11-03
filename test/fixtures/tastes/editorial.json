@@ -1,0 +1,89 @@
+{
+  "version": 8,
+  "name": "Editorial",
+  "metadata": {
+    "maptaste:taste": "editorial",
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {
+    "areas": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f7f1e8"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#f6f0e8",
+          1,
+          "#d0b49a",
+          2,
+          "#8d6b56"
+        ]
+      }
+    },
+    {
+      "id": "strokes",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#9a3412",
+        "line-width": 0.7
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 22
+      },
+      "paint": {
+        "text-color": "#1c1917",
+        "text-halo-color": "#f7f1e8",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-1",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 12
+      },
+      "paint": {
+        "text-color": "#1c1917",
+        "text-halo-color": "#f7f1e8",
+        "text-halo-width": 1.25
+      }
+    }
+  ]
+}

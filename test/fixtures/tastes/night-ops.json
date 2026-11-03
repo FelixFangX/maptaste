@@ -1,0 +1,107 @@
+{
+  "version": 8,
+  "name": "Night ops",
+  "metadata": {
+    "maptaste:taste": "night-ops",
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {
+    "areas": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#0c1210"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#5d7e99",
+          1,
+          "#c5d0d4",
+          2,
+          "#141c1a",
+          3,
+          "#b7a48a",
+          4,
+          "#7d6a4e"
+        ]
+      }
+    },
+    {
+      "id": "strokes",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#e7f6ec",
+        "line-width": 1.6
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 15
+      },
+      "paint": {
+        "text-color": "#e7f6ec",
+        "text-halo-color": "#0c1210",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-1",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 15
+      },
+      "paint": {
+        "text-color": "#e7f6ec",
+        "text-halo-color": "#0c1210",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-2",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 15
+      },
+      "paint": {
+        "text-color": "#e7f6ec",
+        "text-halo-color": "#0c1210",
+        "text-halo-width": 1.25
+      }
+    }
+  ]
+}

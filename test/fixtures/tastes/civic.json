@@ -1,0 +1,121 @@
+{
+  "version": 8,
+  "name": "Civic",
+  "metadata": {
+    "maptaste:taste": "civic",
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {
+    "areas": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f3f5f7"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#f4f7fb",
+          1,
+          "#d5e2f0",
+          2,
+          "#6f9ac4",
+          3,
+          "#3d6fa3",
+          4,
+          "#1f4e79"
+        ]
+      }
+    },
+    {
+      "id": "strokes",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#1f2933",
+        "line-width": 1
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 13
+      },
+      "paint": {
+        "text-color": "#1f2933",
+        "text-halo-color": "#f3f5f7",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-1",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 13
+      },
+      "paint": {
+        "text-color": "#1f2933",
+        "text-halo-color": "#f3f5f7",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-2",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 13
+      },
+      "paint": {
+        "text-color": "#1f2933",
+        "text-halo-color": "#f3f5f7",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-3",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 13
+      },
+      "paint": {
+        "text-color": "#1f2933",
+        "text-halo-color": "#f3f5f7",
+        "text-halo-width": 1.25
+      }
+    }
+  ]
+}

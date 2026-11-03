@@ -1,0 +1,108 @@
+{
+  "version": 8,
+  "name": "Quiet terrain",
+  "metadata": {
+    "maptaste:taste": "terrain-quiet",
+    "maptaste:themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "sources": {
+    "areas": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#e4e0d8"
+      }
+    },
+    {
+      "id": "values",
+      "type": "fill",
+      "source": "areas",
+      "paint": {
+        "fill-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "get",
+            "value"
+          ],
+          0,
+          "#efe8dc",
+          1,
+          "#ddd6c6",
+          2,
+          "#aeb39f",
+          3,
+          "#8b927c",
+          4,
+          "#5c6550"
+        ],
+        "fill-opacity": 0.72
+      }
+    },
+    {
+      "id": "strokes",
+      "type": "line",
+      "source": "areas",
+      "paint": {
+        "line-color": "#2c3426",
+        "line-width": 0.6
+      }
+    },
+    {
+      "id": "places",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 13
+      },
+      "paint": {
+        "text-color": "#2c3426",
+        "text-halo-color": "#e4e0d8",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-1",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 13
+      },
+      "paint": {
+        "text-color": "#2c3426",
+        "text-halo-color": "#e4e0d8",
+        "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "places-2",
+      "type": "symbol",
+      "source": "areas",
+      "layout": {
+        "text-field": "{name}",
+        "text-size": 13
+      },
+      "paint": {
+        "text-color": "#2c3426",
+        "text-halo-color": "#e4e0d8",
+        "text-halo-width": 1.25
+      }
+    }
+  ]
+}

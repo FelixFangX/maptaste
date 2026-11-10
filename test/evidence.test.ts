@@ -44,6 +44,11 @@ describe('style evidence', () => {
       expect(result.score).toBeLessThan(100);
     }
     expect(hsl.findings.find(finding => finding.id === 'MT014')?.evidence).toContain('color is outside');
+    expect(hsl.coverage.blockingErrors).toBe(0);
+    expect(hsl.coverage.unresolved).toBeGreaterThan(0);
+    expect(hsl.coverage.statement).toContain('No blocking taste errors.');
+    expect(hsl.coverage.statement).toContain('The score does not cover them.');
+    expect(hsl.coverage.statement).toContain('Not a MapLibre style validation.');
     expect(coalesced.findings.some(finding => finding.id === 'MT001')).toBe(false);
   });
 
@@ -120,6 +125,18 @@ describe('style evidence', () => {
     expect(broken.score).toBeLessThan(100);
     expect(mixed.findings.find(finding => finding.id === 'MT014')?.message).toContain('both 0 and positive');
     expect(mixed.findings.some(finding => finding.id === 'MT002')).toBe(false);
+  });
+
+  it('skips a hidden layer and reads a painted extrusion color', () => {
+    const ramp = ['interpolate', ['linear'], ['get', 'height'], 8, '#d53e4f', 30, '#fc8d59', 50, '#fee08b', 80, '#abdda4', 110, '#66c2a5', 140, '#3288bd'];
+    const hidden = style([paper, { id: 'values', type: 'fill', layout: { visibility: 'none' }, paint: { 'fill-color': ramp } }]);
+    const extruded = style([paper, { id: 'buildings', type: 'fill-extrusion', paint: { 'fill-extrusion-color': ramp } }]);
+    const concealed = style([{ id: 'ground', type: 'background', layout: { visibility: 'none' }, paint: { 'background-color': '#ffffff' } }], 'night-ops');
+    expect(hidden.findings.some(finding => finding.id === 'MT001')).toBe(false);
+    expect(extruded.findings.find(finding => finding.id === 'MT001')?.path).toBe('layers[1].paint.fill-extrusion-color');
+    expect(extruded.findings.find(finding => finding.id === 'MT001')?.evidence).toContain('#d53e4f');
+    expect(concealed.findings.some(finding => finding.id === 'MT005')).toBe(false);
+    expect(concealed.findings.find(finding => finding.id === 'MT014')?.evidence).toBe('visibility is none');
   });
 
   it('does not mutate the style', () => {

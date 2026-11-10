@@ -1,7 +1,7 @@
 import type { Finding, Rule } from '../types.js';
 import { resolveTaste, tastes } from '../tastes.js';
 import { readPaint } from './read.js';
-import { layers, luminance, object, saturation, shown } from './utils.js';
+import { layers, luminance, object, painted, saturation, shown } from './utils.js';
 
 function oneDirection(values: number[]): boolean {
   let sign = 0;
@@ -20,10 +20,12 @@ export const fillDiscipline: Rule = { id: 'MT006', severity: 'warn', packs: ['gl
   const c = taste.composition;
   const findings: Finding[] = [];
   layers(style).forEach((layer, index) => {
-    if (layer.type !== 'fill') return;
-    const read = readPaint(object(layer.paint)['fill-color']);
+    if (!painted(layer)) return;
+    const key = layer.type === 'fill' ? 'fill-color' : layer.type === 'fill-extrusion' ? 'fill-extrusion-color' : '';
+    if (!key) return;
+    const read = readPaint(object(layer.paint)[key]);
     if (read.state !== 'known' || read.colors.length === 0) return;
-    const path = `layers[${index}].paint.fill-color`;
+    const path = `layers[${index}].paint.${key}`;
     const peak = read.colors.reduce((max, color) => Math.max(max, saturation(color) ?? 0), 0);
     if (peak > c.maxFillSaturation) {
       findings.push({

@@ -9,6 +9,7 @@ describe('taste rules',()=>{
   expect(r.summary).toBe('1 errors, 13 warnings, 1 info');
   expect(r.findings.map(f=>f.id)).toEqual(['MT001','MT002','MT002','MT002','MT002','MT002','MT002','MT002','MT002','MT002','MT002','MT003','MT004','MT006','MT007']);
   expect(r.findings[0]?.evidence).toContain('#ff0000');
+  expect(r.coverage).toEqual({ blockingErrors: 1, unresolved: 0, statement: 'Blocking taste errors: 1. Unresolved values: 0. Not a MapLibre style validation.' });
  });
  it('prefers restrained styles',()=>{const good=check(fixture('good'));expect(good.score).toBeGreaterThan(check(fixture('bad')).score);expect(good.findings).toEqual([]);});
  it('clamps score',()=>expect(score(Array.from({length:20},()=>({id:'x',severity:'error' as const,message:'x'})))).toBe(0));

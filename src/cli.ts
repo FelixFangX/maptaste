@@ -127,7 +127,7 @@ async function main() {
   });
   console.log(format === 'json'
     ? JSON.stringify(result, null, 2)
-    : [...result.findings.map(formatFinding), `Taste: ${result.taste}`, `Score: ${result.score}/100 — ${result.summary}`].join('\n'));
+    : [...result.findings.map(formatFinding), `Taste: ${result.taste}`, `Score: ${result.score}/100 — ${result.summary}`, `Coverage: ${result.coverage.statement}`].join('\n'));
   process.exitCode = result.findings.some(f => f.severity === 'error') ? 1 : 0;
 }
 

@@ -1,7 +1,7 @@
 import type { Rule } from '../types.js';
 import { resolveTaste, tastes } from '../tastes.js';
 import { readPaint } from './read.js';
-import { layers, object } from './utils.js';
+import { layers, object, painted } from './utils.js';
 
 function labelSize(layer: ReturnType<typeof layers>[number]): number | undefined {
   const read = readPaint(object(layer.layout)['text-size']);
@@ -13,7 +13,7 @@ function labelSize(layer: ReturnType<typeof layers>[number]): number | undefined
 export const labelDensity: Rule = { id:'MT004', severity:'warn', packs:['global','cn'], check(style, settings) {
  const taste = tastes[resolveTaste(settings)];
  const cap = taste.composition.maxLabelLayers;
- const labels=layers(style).filter(l=>l.type==='symbol'&&object(l.layout)['text-field']);
+ const labels=layers(style).filter(l=>painted(l)&&l.type==='symbol'&&object(l.layout)['text-field']);
  const large=labels.filter(l=>{ const size = labelSize(l); return size !== undefined && size >= 24; });
  if(labels.length<=cap && large.length<3) return [];
  const message = labels.length>cap

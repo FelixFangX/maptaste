@@ -1,12 +1,13 @@
 import type { Finding, Rule } from '../types.js';
-import { backgroundColor, readPaint, type PaintRead } from './read.js';
-import { layers, object } from './utils.js';
+import { readPaint, type PaintRead } from './read.js';
+import { layers, object, painted } from './utils.js';
 
 const colorPaint: Record<string, readonly string[]> = {
   background: ['background-color'],
   fill: ['fill-color'],
   line: ['line-color'],
   symbol: ['text-color', 'text-halo-color'],
+  'fill-extrusion': ['fill-extrusion-color'],
 };
 const numberPaint: Record<string, readonly string[]> = {
   background: ['background-opacity'],
@@ -25,15 +26,26 @@ function mistyped(expect: 'color' | 'number', read: PaintRead): string | undefin
 
 export const unresolved: Rule = { id: 'MT014', severity: 'info', packs: ['global', 'cn'], check(style) {
   const findings: Finding[] = [];
-  if (backgroundColor(style).state === 'absent') {
+  const list = layers(style);
+  const paintedGround = list.findIndex(layer => layer.type === 'background' && painted(layer));
+  const anyGround = list.findIndex(layer => layer.type === 'background');
+  if (paintedGround < 0 && anyGround < 0) {
     findings.push({
       id: 'MT014', severity: 'info', path: 'layers',
       message: 'No background layer. Ground luminance is not in this style, so the score does not prove the ground.',
       evidence: 'no background layer',
       remedy: 'Add a background layer with a background-color.',
     });
+  } else if (paintedGround < 0) {
+    findings.push({
+      id: 'MT014', severity: 'info', path: `layers[${anyGround}].layout.visibility`,
+      message: 'The background layer is not painted, so this score does not prove the ground.',
+      evidence: 'visibility is none',
+      remedy: 'Paint the background layer, or add another background layer that is visible.',
+    });
   }
-  layers(style).forEach((layer, index) => {
+  list.forEach((layer, index) => {
+    if (!painted(layer)) return;
     const type = typeof layer.type === 'string' ? layer.type : '';
     const paint = object(layer.paint);
     const layout = object(layer.layout);

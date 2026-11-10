@@ -117,9 +117,9 @@ export function readPaint(value: unknown, depth = 0): PaintRead {
   return unknown('value is not a color, number, or supported expression');
 }
 
-/** Ground color the style document can prove. */
+/** Ground color of a painted background layer. A hidden layer is not the ground. */
 export function backgroundColor(style: StyleDoc): PaintRead {
-  const layer = layers(style).find(item => item.type === 'background');
+  const layer = layers(style).find(item => item.type === 'background' && object(item.layout).visibility !== 'none');
   if (!layer) return ABSENT;
   const color = object(layer.paint)['background-color'];
   if (color === undefined) return known({ colors: ['#000000'], numbers: [], note: 'omitted background-color; MapLibre default #000000' });

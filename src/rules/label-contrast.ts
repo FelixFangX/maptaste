@@ -1,7 +1,7 @@
 import type { Finding, Rule } from '../types.js';
 import { resolveTaste, tastes } from '../tastes.js';
 import { backgroundColor, readPaint } from './read.js';
-import { contrast, layers, object, shown } from './utils.js';
+import { contrast, layers, object, painted, shown } from './utils.js';
 
 function worst(text: readonly string[], partners: readonly string[]): number | undefined {
   let low: number | undefined;
@@ -20,7 +20,7 @@ export const labelContrast: Rule = { id: 'MT002', severity: 'warn', packs: ['glo
   const minimum = taste.composition.contrastMin;
   const bg = backgroundColor(style);
   return layers(style).flatMap((layer, index): Finding[] => {
-    if (layer.type !== 'symbol' || !object(layer.layout)['text-field']) return [];
+    if (!painted(layer) || layer.type !== 'symbol' || !object(layer.layout)['text-field']) return [];
     const paint = object(layer.paint);
     const text = readPaint(paint['text-color'] === undefined ? '#000000' : paint['text-color']);
     const width = readPaint(paint['text-halo-width']);

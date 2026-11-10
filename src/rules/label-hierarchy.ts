@@ -1,13 +1,13 @@
 import type { Rule } from '../types.js';
 import { resolveTaste, tastes } from '../tastes.js';
 import { readPaint } from './read.js';
-import { layers, object } from './utils.js';
+import { layers, object, painted } from './utils.js';
 
 export const labelHierarchy: Rule = { id: 'MT008', severity: 'warn', packs: ['global', 'cn'], check(style, settings) {
   const taste = tastes[resolveTaste(settings)];
   const hierarchy = taste.composition.hierarchy;
   if (!hierarchy) return [];
-  const labels = layers(style).filter(layer => layer.type === 'symbol' && object(layer.layout)['text-field']);
+  const labels = layers(style).filter(layer => painted(layer) && layer.type === 'symbol' && object(layer.layout)['text-field']);
   const sizes = labels.map(layer => {
     const read = readPaint(object(layer.layout)['text-size']);
     if (read.state === 'absent') return 16;

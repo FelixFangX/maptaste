@@ -1,14 +1,14 @@
 import type { Rule } from '../types.js';
 import { resolveTaste, tastes } from '../tastes.js';
 import { readPaint } from './read.js';
-import { layers, object, shown } from './utils.js';
+import { layers, object, painted, shown } from './utils.js';
 
 export const fillOpacity: Rule = { id: 'MT010', severity: 'warn', packs: ['global', 'cn'], check(style, settings) {
   const taste = tastes[resolveTaste(settings)];
   const cap = taste.composition.fillOpacityMax;
   if (cap == null) return [];
   const hit = layers(style).findIndex(layer => {
-    if (layer.type !== 'fill') return false;
+    if (!painted(layer) || layer.type !== 'fill') return false;
     const read = readPaint(object(layer.paint)['fill-opacity']);
     if (read.state === 'unknown') return false;
     if (read.state === 'known' && (read.numbers.length === 0 || read.numbers.some(value => value < 0 || value > 1) || read.colors.length > 0)) return false;

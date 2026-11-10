@@ -51,6 +51,10 @@ it('returns correct CLI exit codes and JSON', async () => {
  expect(hslText.stdout).toContain('INFO MT014 layers[1].paint.fill-color:');
  expect(hslText.stdout).toContain('  evidence: color is outside');
  expect(hslText.stdout).toContain('  remedy: Use a hex');
+ expect(hslText.stdout).toContain('Coverage: No blocking taste errors.');
+ expect(hslText.stdout).toContain('Not a MapLibre style validation.');
+ expect(hslBody.coverage.blockingErrors).toBe(0);
+ expect(hslBody.coverage.unresolved).toBeGreaterThan(0);
  expect(run(['check','test/fixtures/good-style.json','--pack','cn']).status).toBe(0);
  expect(run(['mcp','--extra']).status).toBe(2);
  const mcp = spawn(process.execPath, ['dist/cli.js', 'mcp'], { stdio: ['pipe', 'pipe', 'pipe'] });

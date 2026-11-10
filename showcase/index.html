@@ -55,15 +55,14 @@
         <p id="map-status" role="status" hidden></p>
         <div class="place-caption" hidden><span class="place-title"></span><span id="place-coords"></span></div>
       </section>
-      <aside class="check" aria-label="Try check">
+      <aside class="check" aria-label="Style on this map">
         <div class="check-top">
-          <p class="check-score"><span id="score">—</span><span>/100</span></p>
-          <div class="fixture-control" role="group" aria-label="Style fixture">
-            <button type="button" data-fixture="rainbow">Rainbow</button>
-            <button type="button" data-fixture="taste">ink-paper</button>
+          <div>
+            <p class="check-kicker">Style on this map</p>
+            <p class="check-score"><span id="score">—</span><span>/100</span></p>
           </div>
-          <div id="ramp" class="ramp" hidden></div>
         </div>
+        <p id="map-coverage" class="coverage"></p>
         <div class="knobs">
           <label class="knob">
             <span>Classes</span>
@@ -86,10 +85,31 @@
             <output id="out-line" for="knob-line">0.8</output>
           </label>
         </div>
-        <ol id="findings" aria-live="polite"></ol>
-        <textarea id="style-json" spellcheck="false" aria-label="MapLibre style JSON"></textarea>
+        <ol id="findings" class="findings" aria-live="polite"></ol>
+        <textarea id="style-json" readonly spellcheck="false" aria-label="Style JSON currently on the map"></textarea>
       </aside>
       </div>
+      </section>
+      <section id="specimen" aria-labelledby="specimen-title">
+        <div class="specimen-heading">
+          <h2 id="specimen-title">Style specimen</h2>
+          <p class="specimen-note">Not drawn on the map. This score checks the JSON below and nothing else.</p>
+        </div>
+        <div class="specimen-body">
+          <div class="specimen-read">
+            <div class="check-top">
+              <p class="check-score"><span id="specimen-score">—</span><span>/100</span></p>
+              <div class="fixture-control" role="group" aria-label="Specimen">
+                <button type="button" data-specimen="rainbow">Rainbow</button>
+                <button type="button" data-specimen="taste">ink-paper</button>
+              </div>
+              <div id="ramp" class="ramp" hidden></div>
+            </div>
+            <p id="specimen-coverage" class="coverage"></p>
+            <ol id="specimen-findings" class="findings" aria-live="polite"></ol>
+          </div>
+          <textarea id="specimen-json" spellcheck="false" aria-label="Style specimen JSON, not drawn on the map"></textarea>
+        </div>
       </section>
       <footer><span>A little perspective changes everything.</span><span>Built with MapLibre</span></footer>
     </main>

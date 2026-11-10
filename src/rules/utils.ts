@@ -1,6 +1,10 @@
 import type { StyleDoc } from '../types.js';
 export const object = (v: unknown): Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {};
 export const layers = (s: StyleDoc) => Array.isArray(s.layers) ? s.layers.map(object) : [];
+/** Literal `visibility: "none"` is not painted. An expression stays in scope. */
+export function painted(layer: Record<string, unknown>): boolean {
+  return object(layer.layout).visibility !== 'none';
+}
 /** Stable, non-locale number for findings. Integers stay integers. 0 stays 0. */
 export function shown(value: number): string {
   if (Number.isInteger(value)) return String(value);

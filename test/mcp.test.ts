@@ -24,8 +24,11 @@ it('answers check_taste over MCP stdio', async () => {
   }) as { result?: { isError?: boolean; content?: { text?: string }[] } };
   child.kill();
   expect(response.result?.isError).not.toBe(true);
-  const body = JSON.parse(response.result?.content?.[0]?.text ?? '{}') as { findings: { id: string; evidence?: string }[]; score: number };
+  const body = JSON.parse(response.result?.content?.[0]?.text ?? '{}') as { findings: { id: string; evidence?: string }[]; score: number; coverage: { statement: string; unresolved: number; blockingErrors: number } };
   expect(body.findings.some(finding => finding.id === 'MT001')).toBe(false);
   expect(body.findings.some(finding => finding.id === 'MT014')).toBe(true);
   expect(body.score).toBeLessThan(100);
+  expect(body.coverage.blockingErrors).toBe(0);
+  expect(body.coverage.unresolved).toBeGreaterThan(0);
+  expect(body.coverage.statement).toContain('Not a MapLibre style validation.');
 });

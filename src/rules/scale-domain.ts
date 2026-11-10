@@ -1,9 +1,9 @@
 import type { Finding, Rule } from '../types.js';
 import { readPaint, type PaintRead } from './read.js';
-import { layers, object, shown } from './utils.js';
+import { layers, object, painted, shown } from './utils.js';
 
 const watched: { where: 'paint' | 'layout'; types: readonly string[]; keys: readonly string[] }[] = [
-  { where: 'paint', types: ['background', 'fill', 'line', 'symbol'], keys: ['background-color', 'background-opacity', 'fill-color', 'fill-opacity', 'line-color', 'line-width', 'line-opacity', 'text-color', 'text-halo-color', 'text-halo-width'] },
+  { where: 'paint', types: ['background', 'fill', 'fill-extrusion', 'line', 'symbol'], keys: ['background-color', 'background-opacity', 'fill-color', 'fill-extrusion-color', 'fill-opacity', 'line-color', 'line-width', 'line-opacity', 'text-color', 'text-halo-color', 'text-halo-width'] },
   { where: 'layout', types: ['symbol'], keys: ['text-size'] },
 ];
 
@@ -31,6 +31,7 @@ function domainEvidence(read: PaintRead): string | undefined {
 export const scaleDomain: Rule = { id: 'MT015', severity: 'warn', packs: ['global', 'cn'], check(style) {
   const findings: Finding[] = [];
   layers(style).forEach((layer, index) => {
+    if (!painted(layer)) return;
     const type = typeof layer.type === 'string' ? layer.type : '';
     for (const group of watched) {
       if (!group.types.includes(type)) continue;

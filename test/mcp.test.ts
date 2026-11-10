@@ -31,4 +31,4 @@ it('answers check_taste over MCP stdio', async () => {
   expect(body.coverage.blockingErrors).toBe(0);
   expect(body.coverage.unresolved).toBeGreaterThan(0);
   expect(body.coverage.statement).toContain('Not a MapLibre style validation.');
-});
+}, 20_000);

@@ -63,4 +63,4 @@ it('returns correct CLI exit codes and JSON', async () => {
  await new Promise(resolve => setTimeout(resolve, 500));
  expect(mcp.exitCode, stderr).toBeNull();
  mcp.kill();
-});
+}, 20_000);

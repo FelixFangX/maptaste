@@ -25,10 +25,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset
 #findings{list-style:none;margin:0;padding:0;overflow:auto;flex:1;min-height:0}
 #findings:empty{display:none}
 #findings li{padding:12px 14px 14px;border-top:1px solid var(--line)}
+#findings li[role=button]{cursor:pointer}
+#findings li[role=button]:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+#findings li[aria-current=true]{background:var(--panel)}
 #findings li.error{box-shadow:inset 3px 0 0 var(--accent)}
 #findings .rule{font:500 12px/1.2 var(--mono)}
 #findings .sev{margin-left:8px;color:var(--muted);font:500 11px/1.2 var(--mono);letter-spacing:.04em}
 #findings p{margin:6px 0 0;font-size:13px;line-height:1.45}
+#findings .remedy{color:var(--muted);font-size:12px}
 #findings code{display:block;margin-top:6px;color:var(--muted);font:11px/1.45 var(--mono);overflow-wrap:anywhere}
 #style-json{box-sizing:border-box;width:100%;border:0;border-top:1px solid var(--line);margin:0;height:11rem;resize:none;padding:12px 14px;background:transparent;color:var(--ink);font:11px/1.45 var(--mono)}
 #style-json:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}

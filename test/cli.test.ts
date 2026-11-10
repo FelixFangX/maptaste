@@ -40,6 +40,17 @@ it('returns correct CLI exit codes and JSON', async () => {
  expect(JSON.parse(tasted.stdout).score).toBe(100);
  expect(JSON.parse(tasted.stdout).taste).toBe('terrain-quiet');
  expect(run(['check','test/fixtures/tastes/rainbow.json','--taste','civic']).status).toBe(1);
+ const hsl = run(['check','test/fixtures/hsl-fill.json','--format','json']);
+ expect(hsl.status).toBe(0);
+ const hslBody = JSON.parse(hsl.stdout);
+ expect(hslBody.findings.some((finding: { id: string }) => finding.id === 'MT001')).toBe(false);
+ expect(hslBody.findings.some((finding: { id: string; evidence?: string }) => finding.id === 'MT014' && finding.evidence?.includes('color is outside'))).toBe(true);
+ expect(hslBody.score).toBeLessThan(100);
+ const hslText = run(['check','test/fixtures/hsl-fill.json']);
+ expect(hslText.status).toBe(0);
+ expect(hslText.stdout).toContain('INFO MT014 layers[1].paint.fill-color:');
+ expect(hslText.stdout).toContain('  evidence: color is outside');
+ expect(hslText.stdout).toContain('  remedy: Use a hex');
  expect(run(['check','test/fixtures/good-style.json','--pack','cn']).status).toBe(0);
  expect(run(['mcp','--extra']).status).toBe(2);
  const mcp = spawn(process.execPath, ['dist/cli.js', 'mcp'], { stdio: ['pipe', 'pipe', 'pipe'] });

@@ -107,7 +107,7 @@ async function resolvePlace(source: URLSearchParams = params, live = false) {
       if (lang) geocode.set('lang', lang.split(',')[0]!);
       const response = await fetch(`/api/geocode?${geocode}`);
       if (!response.ok) throw new Error(response.status === 404 ? 'Place not found.' : 'Could not resolve place. Try again.');
-      const result = await response.json();
+      const result = await response.json().catch(() => { throw new Error('Could not resolve place. Try again.'); });
       if (result.ok !== true || !Number.isFinite(result.lng) || !Number.isFinite(result.lat) || Math.abs(result.lng) > 180 || Math.abs(result.lat) > 90 || typeof result.name !== 'string') throw new Error('Could not resolve place.');
       center = [result.lng, result.lat]; name = result.name;
     }
@@ -305,7 +305,52 @@ function syncChrome() {
   paintKnob(knobLabels, outLabels, knobs.labels, rules.maxLabelLayers);
   paintKnob(knobLine, outLine, knobs.lineWidth, rules.maxLineWidth);
 }
-function renderFindings(items: { id: string; severity: string; message: string; path?: string }[]) {
+function layerSpan(source: string, index: number): [number, number] | null {
+  const keyAt = source.search(/"layers"\s*:/);
+  if (keyAt < 0) return null;
+  const bracket = source.indexOf('[', keyAt);
+  if (bracket < 0) return null;
+  let depth = 0;
+  let seen = -1;
+  let start = -1;
+  let inString = false;
+  let escape = false;
+  for (let i = bracket + 1; i < source.length; i++) {
+    const ch = source[i]!;
+    if (inString) {
+      if (escape) escape = false;
+      else if (ch === '\\') escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{' || ch === '[') {
+      if (depth === 0 && ch === '{') { seen += 1; start = i; }
+      depth += 1;
+      continue;
+    }
+    if (ch === '}' || ch === ']') {
+      depth -= 1;
+      if (depth === 0 && ch === '}' && seen === index) return [start, i + 1];
+      if (depth < 0) return null;
+    }
+  }
+  return null;
+}
+
+function reveal(path: string) {
+  const layer = /layers\[(\d+)\]/.exec(path);
+  const span = layer ? layerSpan(styleInput.value, Number(layer[1])) : null;
+  const at = span ? span[0] : styleInput.value.indexOf(path.startsWith('metadata') ? '"metadata"' : '"layers"');
+  if (at < 0) return;
+  const end = span ? span[1] : at + (path.startsWith('metadata') ? '"metadata"' : '"layers"').length;
+  styleInput.focus();
+  styleInput.setSelectionRange(at, end);
+  const line = styleInput.value.slice(0, at).split('\n').length;
+  styleInput.scrollTop = Math.max(0, (line - 2) * 16);
+}
+
+function renderFindings(items: { id: string; severity: string; message: string; path?: string; evidence?: string; remedy?: string }[]) {
   findingsEl.replaceChildren();
   for (const finding of items) {
     const item = document.createElement('li');
@@ -328,6 +373,32 @@ function renderFindings(items: { id: string; severity: string; message: string; 
       const path = document.createElement('code');
       path.textContent = finding.path;
       item.append(path);
+    }
+    if (finding.evidence) {
+      const evidence = document.createElement('code');
+      evidence.textContent = finding.evidence;
+      item.append(evidence);
+    }
+    if (finding.remedy) {
+      const remedy = document.createElement('p');
+      remedy.className = 'remedy';
+      remedy.textContent = finding.remedy;
+      item.append(remedy);
+    }
+    if (finding.path) {
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      const show = () => {
+        findingsEl.querySelectorAll('[aria-current]').forEach(other => other.removeAttribute('aria-current'));
+        item.setAttribute('aria-current', 'true');
+        reveal(finding.path!);
+      };
+      item.addEventListener('click', show);
+      item.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        show();
+      });
     }
     findingsEl.append(item);
   }

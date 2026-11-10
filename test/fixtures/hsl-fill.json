@@ -1,0 +1,8 @@
+{
+  "version": 8,
+  "metadata": { "maptaste:themes": ["light", "dark"] },
+  "layers": [
+    { "id": "background", "type": "background", "paint": { "background-color": "#ebe7df" } },
+    { "id": "values", "type": "fill", "paint": { "fill-color": "hsl(0, 100%, 50%)" } }
+  ]
+}

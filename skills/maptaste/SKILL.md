@@ -19,4 +19,6 @@ Do not ship the default MapLibre look. Pick one taste, then build and check agai
 
 A taste is a plate plus tokens. The plate is road grammar, type, label count, line-layer count, extrusion, and ground. Swapping a color array onto the same street atlas is not the taste. Stripping the colors should still leave a different map.
 
+The checker reads the style document only. It does not see features, a legend, or a rendered image. `hsl()` and data-driven colors are reported as unresolved (MT014), not as a pass. Stops of `0` and negative stops are real. Omitted opacity is the MapLibre default, not zero.
+
 Rainbow fills are an error in every taste (MT001). Layout should explain itself. These checks are heuristics, not schema validation or a substitute for looking at the map.

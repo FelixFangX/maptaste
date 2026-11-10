@@ -4,7 +4,7 @@ import { check } from './engine.js';
 import { writeScaffold } from './scaffold.js';
 import { tasteSpecimen } from './specimens.js';
 import { isTaste, packAlias, tasteCatalog, tasteNames, tastes, tasteRules, type Taste } from './tastes.js';
-import type { TasteName } from './types.js';
+import type { Finding, TasteName } from './types.js';
 
 const usage = [
   'Usage: maptaste tastes [--format json|text]',
@@ -35,6 +35,13 @@ function formatOf(opts: Record<string, string>, allowed: string[]): 'json' | 'te
   const format = opts['--format'] ?? 'text';
   if (format !== 'json' && format !== 'text') throw new Error(`Invalid option: --format ${format}`);
   return format;
+}
+
+function formatFinding(finding: Finding): string {
+  const lines = [`${finding.severity.toUpperCase()} ${finding.id} ${finding.path ?? ''}: ${finding.message}`];
+  if (finding.evidence) lines.push(`  evidence: ${finding.evidence}`);
+  if (finding.remedy) lines.push(`  remedy: ${finding.remedy}`);
+  return lines.join('\n');
 }
 
 function requireTaste(opts: Record<string, string>): TasteName {
@@ -120,7 +127,7 @@ async function main() {
   });
   console.log(format === 'json'
     ? JSON.stringify(result, null, 2)
-    : [...result.findings.map(f => `${f.severity.toUpperCase()} ${f.id} ${f.path ?? ''}: ${f.message}`), `Taste: ${result.taste}`, `Score: ${result.score}/100 — ${result.summary}`].join('\n'));
+    : [...result.findings.map(formatFinding), `Taste: ${result.taste}`, `Score: ${result.score}/100 — ${result.summary}`, `Coverage: ${result.coverage.statement}`].join('\n'));
   process.exitCode = result.findings.some(f => f.severity === 'error') ? 1 : 0;
 }
 

@@ -13,7 +13,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset
 #map{height:var(--map-h)}
 .check{display:flex;flex-direction:column;min-width:0;height:var(--map-h);border-left:1px solid var(--line)}
 .check-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 12px;padding:16px 14px 10px}
+.check-kicker{margin:0 0 4px;font:500 12px/1.2 var(--mono)}
 .check-score{margin:0;display:flex;align-items:baseline;gap:3px;font-family:var(--mono)}
+.coverage{margin:0;padding:0 14px 8px;font-size:13px;line-height:1.45}
 #score{font-size:2.75rem;letter-spacing:-.05em;line-height:.9}
 .check-score span:last-child{color:var(--muted);font-size:.72rem}
 .fixture-control{display:flex;gap:2px}
@@ -22,14 +24,26 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset
 .ramp{display:flex;width:100%;height:8px}
 .ramp[hidden]{display:none}
 .ramp i{flex:1}
-#findings{list-style:none;margin:0;padding:0;overflow:auto;flex:1;min-height:0}
-#findings:empty{display:none}
-#findings li{padding:12px 14px 14px;border-top:1px solid var(--line)}
-#findings li.error{box-shadow:inset 3px 0 0 var(--accent)}
-#findings .rule{font:500 12px/1.2 var(--mono)}
-#findings .sev{margin-left:8px;color:var(--muted);font:500 11px/1.2 var(--mono);letter-spacing:.04em}
-#findings p{margin:6px 0 0;font-size:13px;line-height:1.45}
-#findings code{display:block;margin-top:6px;color:var(--muted);font:11px/1.45 var(--mono);overflow-wrap:anywhere}
+.findings{list-style:none;margin:0;padding:0;overflow:auto;flex:1;min-height:0}
+.findings:empty{display:none}
+.findings li{padding:12px 14px 14px;border-top:1px solid var(--line)}
+.findings li[role=button]{cursor:pointer}
+.findings li[role=button]:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.findings li[aria-current=true]{background:var(--panel)}
+.findings li.error{box-shadow:inset 3px 0 0 var(--accent)}
+.findings .rule{font:500 12px/1.2 var(--mono)}
+.findings .sev{margin-left:8px;color:var(--muted);font:500 11px/1.2 var(--mono);letter-spacing:.04em}
+.findings p{margin:6px 0 0;font-size:13px;line-height:1.45}
+.findings .remedy{color:var(--muted);font-size:12px}
+.findings code{display:block;margin-top:6px;color:var(--muted);font:11px/1.45 var(--mono);overflow-wrap:anywhere}
+#specimen{margin-top:28px;border:1px solid var(--line);background:var(--paper)}
+.specimen-heading{padding:16px 14px 4px}
+.specimen-heading h2{margin:0;font-size:1.35rem;font-weight:500}
+.specimen-note{margin:6px 0 0;max-width:42rem}
+.specimen-body{display:grid;grid-template-columns:minmax(16rem,24rem) minmax(0,1fr);min-height:22rem}
+.specimen-read{display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--line)}
+#specimen-json{box-sizing:border-box;width:100%;height:100%;min-height:22rem;border:0;margin:0;resize:none;padding:12px 14px;background:transparent;color:var(--ink);font:11px/1.45 var(--mono)}
+#specimen-json:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 #style-json{box-sizing:border-box;width:100%;border:0;border-top:1px solid var(--line);margin:0;height:11rem;resize:none;padding:12px 14px;background:transparent;color:var(--ink);font:11px/1.45 var(--mono)}
 #style-json:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
 #copy-style{min-width:0;border:1px solid var(--line);padding:8px 14px;font:500 12px/1 var(--mono)}
@@ -49,7 +63,7 @@ footer{display:flex;justify-content:space-between;gap:24px;font-size:11px;color:
 .place-presets button{min-width:0;padding:4px 7px;font-size:12px;color:var(--muted)}
 .place-presets button:hover{background:var(--line);opacity:1}
 .place-caption[hidden]{display:none}
-@media(max-width:760px){.stage{grid-template-columns:1fr}.check{height:auto;border-left:0;border-top:1px solid var(--line)}#findings{max-height:16rem}#style-json{height:9rem}}
+@media(max-width:760px){.stage{grid-template-columns:1fr}.check{height:auto;border-left:0;border-top:1px solid var(--line)}.findings{max-height:16rem}#style-json{height:9rem}.specimen-body{grid-template-columns:1fr}.specimen-read{border-right:0;border-bottom:1px solid var(--line)}#specimen-json{height:12rem;min-height:0}}
 @media(max-width:640px){.stage{--map-h:max(65vh,440px)}.place-caption{left:12px;bottom:30px;padding:12px}footer{font-size:12px;line-height:1.6}.place-presets{display:none}.controls button{min-width:0;padding:9px 8px}}
 
 @font-face{font-family:'Instrument Serif';src:url('/fonts/instrument-serif-latin-400-normal.woff2') format('woff2');font-display:swap}

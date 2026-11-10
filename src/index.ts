@@ -1,4 +1,4 @@
-export { check, score, summarize } from './engine.js';
+export { check, coverage, score, summarize } from './engine.js';
 export { rules } from './rules/index.js';
 export { packs } from './packs/index.js';
 export { tastes, tasteNames, packAlias, resolveTaste, tasteCatalog, tasteRules, signatureRamp } from './tastes.js';

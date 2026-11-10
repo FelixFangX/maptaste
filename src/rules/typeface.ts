@@ -1,6 +1,6 @@
 import type { Rule } from '../types.js';
 import { resolveTaste, tastes } from '../tastes.js';
-import { layers, object } from './utils.js';
+import { layers, object, painted } from './utils.js';
 
 function fontsOf(layer: ReturnType<typeof layers>[number]): string[] {
   const font = object(layer.layout)['text-font'];
@@ -10,7 +10,7 @@ function fontsOf(layer: ReturnType<typeof layers>[number]): string[] {
 
 export const typeface: Rule = { id: 'MT013', severity: 'warn', packs: ['global', 'cn'], check(style, settings) {
   const taste = tastes[resolveTaste(settings)];
-  const faces = layers(style).filter(layer => layer.type === 'symbol').map(fontsOf);
+  const faces = layers(style).filter(layer => painted(layer) && layer.type === 'symbol').map(fontsOf);
   if (faces.every(face => face.length === 0)) return [];
   const italic = faces.filter(face => face.some(name => /italic/i.test(name))).length;
   const bold = faces.some(face => face.some(name => /bold/i.test(name)));

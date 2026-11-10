@@ -107,7 +107,7 @@ async function resolvePlace(source: URLSearchParams = params, live = false) {
       if (lang) geocode.set('lang', lang.split(',')[0]!);
       const response = await fetch(`/api/geocode?${geocode}`);
       if (!response.ok) throw new Error(response.status === 404 ? 'Place not found.' : 'Could not resolve place. Try again.');
-      const result = await response.json();
+      const result = await response.json().catch(() => { throw new Error('Could not resolve place. Try again.'); });
       if (result.ok !== true || !Number.isFinite(result.lng) || !Number.isFinite(result.lat) || Math.abs(result.lng) > 180 || Math.abs(result.lat) > 90 || typeof result.name !== 'string') throw new Error('Could not resolve place.');
       center = [result.lng, result.lat]; name = result.name;
     }
@@ -208,6 +208,12 @@ function startMap(camera: { center: [number, number]; zoom: number; pitch: numbe
 function syncPlate() {
   const stage = tastes[taste].stage;
   const extruded = before || stage.extrusion;
+  for (const layer of baseStyle.layers) {
+    if (layer.id === 'building' && layer.type === 'fill') layer.maxzoom = extruded ? 14 : 24;
+    if (layer.id === 'building-3d' && layer.type === 'fill-extrusion') layer.minzoom = extruded ? 14 : 24;
+    if (layer.id === 'natural_earth' && layer.type === 'raster') layer.maxzoom = !before && stage.hillshade ? 9 : 7;
+  }
+  if (!map?.getLayer) return;
   if (map.getLayer('building')) map.setLayerZoomRange('building', 13, extruded ? 14 : 24);
   if (map.getLayer('building-3d')) map.setLayerZoomRange('building-3d', extruded ? 14 : 24, 24);
   if (map.getLayer('natural_earth')) map.setLayerZoomRange('natural_earth', 0, !before && stage.hillshade ? 9 : 7);
@@ -247,10 +253,15 @@ theme.addEventListener('click', () => {
 });
 const modeButtons = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
 const scoreEl = document.querySelector<HTMLElement>('#score')!;
+const mapCoverage = document.querySelector<HTMLElement>('#map-coverage')!;
 const findingsEl = document.querySelector<HTMLOListElement>('#findings')!;
 const styleInput = document.querySelector<HTMLTextAreaElement>('#style-json')!;
+const specimenScore = document.querySelector<HTMLElement>('#specimen-score')!;
+const specimenCoverage = document.querySelector<HTMLElement>('#specimen-coverage')!;
+const specimenFindings = document.querySelector<HTMLOListElement>('#specimen-findings')!;
+const specimenInput = document.querySelector<HTMLTextAreaElement>('#specimen-json')!;
 const rampEl = document.querySelector<HTMLElement>('#ramp')!;
-const fixtureButtons = document.querySelectorAll<HTMLButtonElement>('[data-fixture]');
+const specimenButtons = document.querySelectorAll<HTMLButtonElement>('[data-specimen]');
 const gallery = document.querySelector<HTMLElement>('#gallery')!;
 const cta = document.querySelector<HTMLElement>('#cta')!;
 const studyTaste = document.querySelector<HTMLElement>('#study-taste');
@@ -298,15 +309,63 @@ function syncChrome() {
   cta.textContent = `npx maptaste check style.json --taste ${taste}`;
   if (studyTaste) studyTaste.textContent = taste;
   markGallery(gallery, taste);
-  const tasteButton = document.querySelector<HTMLButtonElement>('[data-fixture="taste"]');
+  const tasteButton = document.querySelector<HTMLButtonElement>('[data-specimen="taste"]');
   if (tasteButton) tasteButton.textContent = taste;
   paintKnob(knobClasses, outClasses, knobs.classes, rules.maxFillStops);
   paintKnob(knobLabelSize, outLabelSize, knobs.labelSize, null);
   paintKnob(knobLabels, outLabels, knobs.labels, rules.maxLabelLayers);
   paintKnob(knobLine, outLine, knobs.lineWidth, rules.maxLineWidth);
 }
-function renderFindings(items: { id: string; severity: string; message: string; path?: string }[]) {
-  findingsEl.replaceChildren();
+function layerSpan(source: string, index: number): [number, number] | null {
+  const keyAt = source.search(/"layers"\s*:/);
+  if (keyAt < 0) return null;
+  const bracket = source.indexOf('[', keyAt);
+  if (bracket < 0) return null;
+  let depth = 0;
+  let seen = -1;
+  let start = -1;
+  let inString = false;
+  let escape = false;
+  for (let i = bracket + 1; i < source.length; i++) {
+    const ch = source[i]!;
+    if (inString) {
+      if (escape) escape = false;
+      else if (ch === '\\') escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{' || ch === '[') {
+      if (depth === 0 && ch === '{') { seen += 1; start = i; }
+      depth += 1;
+      continue;
+    }
+    if (ch === '}' || ch === ']') {
+      depth -= 1;
+      if (depth === 0 && ch === '}' && seen === index) return [start, i + 1];
+      if (depth < 0) return null;
+    }
+  }
+  return null;
+}
+
+function reveal(input: HTMLTextAreaElement, path: string) {
+  const layer = /layers\[(\d+)\]/.exec(path);
+  const span = layer ? layerSpan(input.value, Number(layer[1])) : null;
+  const at = span ? span[0] : input.value.indexOf(path.startsWith('metadata') ? '"metadata"' : '"layers"');
+  if (at < 0) return;
+  const end = span ? span[1] : at + (path.startsWith('metadata') ? '"metadata"' : '"layers"').length;
+  input.focus();
+  input.setSelectionRange(at, end);
+  const key = path.split('.').pop() ?? '';
+  const keyAt = key ? input.value.slice(at, end).indexOf(`"${key}"`) : -1;
+  const focusAt = keyAt >= 0 ? at + keyAt : at;
+  const line = input.value.slice(0, focusAt).split('\n').length;
+  input.scrollTop = Math.max(0, (line - 3) * 16);
+}
+
+function renderFindings(list: HTMLOListElement, input: HTMLTextAreaElement, items: { id: string; severity: string; message: string; path?: string; evidence?: string; remedy?: string }[]) {
+  list.replaceChildren();
   for (const finding of items) {
     const item = document.createElement('li');
     item.className = finding.severity;
@@ -329,54 +388,92 @@ function renderFindings(items: { id: string; severity: string; message: string; 
       path.textContent = finding.path;
       item.append(path);
     }
-    findingsEl.append(item);
+    if (finding.evidence) {
+      const evidence = document.createElement('code');
+      evidence.textContent = finding.evidence;
+      item.append(evidence);
+    }
+    if (finding.remedy) {
+      const remedy = document.createElement('p');
+      remedy.className = 'remedy';
+      remedy.textContent = finding.remedy;
+      item.append(remedy);
+    }
+    if (finding.path) {
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      const show = () => {
+        list.querySelectorAll('[aria-current]').forEach(other => other.removeAttribute('aria-current'));
+        item.setAttribute('aria-current', 'true');
+        reveal(input, finding.path!);
+      };
+      item.addEventListener('click', show);
+      item.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        show();
+      });
+    }
+    list.append(item);
   }
 }
-function runCheck() {
-  let parsed: unknown;
-  try { parsed = JSON.parse(styleInput.value); }
-  catch { scoreEl.textContent = '—'; renderFindings([{ id: '', severity: 'info', message: 'Invalid JSON' }]); return; }
+function showResult(score: HTMLElement, coverage: HTMLElement, list: HTMLOListElement, input: HTMLTextAreaElement, parsed: unknown) {
   try {
     const result = check(parsed as StyleDoc, { taste });
-    scoreEl.textContent = String(result.score);
-    renderFindings(result.findings);
+    score.textContent = String(result.score);
+    coverage.textContent = result.coverage.statement;
+    renderFindings(list, input, result.findings);
   } catch (error) {
-    scoreEl.textContent = '—';
-    renderFindings([{ id: '', severity: 'info', message: error instanceof Error ? error.message : 'Could not check style' }]);
+    score.textContent = '—';
+    coverage.textContent = '';
+    renderFindings(list, input, [{ id: '', severity: 'info', message: error instanceof Error ? error.message : 'Could not check style' }]);
   }
+}
+function runMapCheck() {
+  const style = currentStyleDocument();
+  styleInput.value = JSON.stringify(style, null, 2);
+  showResult(scoreEl, mapCoverage, findingsEl, styleInput, style);
+}
+function runSpecimen() {
+  let parsed: unknown;
+  try { parsed = JSON.parse(specimenInput.value); }
+  catch {
+    specimenScore.textContent = '—';
+    specimenCoverage.textContent = '';
+    renderFindings(specimenFindings, specimenInput, [{ id: '', severity: 'info', message: 'Invalid JSON' }]);
+    return;
+  }
+  showResult(specimenScore, specimenCoverage, specimenFindings, specimenInput, parsed);
 }
 function syncModeButtons() {
   modeButtons.forEach(control => control.setAttribute('aria-pressed', String((control.dataset.mode === 'before') === before)));
 }
-function showTasteSpecimen() {
-  fixtureButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.fixture === 'taste')));
-  styleInput.value = JSON.stringify(tasteSpecimen(taste, knobs), null, 2);
-  paintRamp('taste');
-  runCheck();
-}
-function applyFixture(kind: 'rainbow' | 'taste') {
-  before = kind === 'rainbow';
+function setMode(nextBefore: boolean) {
+  before = nextBefore;
   params.set('mode', before ? 'before' : 'after');
   updateUrl();
   syncModeButtons();
-  if (before) {
-    fixtureButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.fixture === 'rainbow')));
-    styleInput.value = JSON.stringify(tasteSpecimen('rainbow'), null, 2);
-    paintRamp('rainbow');
-    runCheck();
-  } else showTasteSpecimen();
+  syncPlate();
   updateStyle();
   frameCamera();
+  runMapCheck();
+}
+function showSpecimen(kind: 'rainbow' | 'taste') {
+  specimenButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.specimen === kind)));
+  const doc = kind === 'rainbow' ? tasteSpecimen('rainbow') : tasteSpecimen(taste);
+  specimenInput.value = JSON.stringify(doc, null, 2);
+  paintRamp(kind);
+  runSpecimen();
 }
 function selectTaste(id: TasteName) {
   taste = id;
   knobs = { ...defaultKnobs[id] };
   params.set('taste', id);
   syncChrome();
-  applyFixture('taste');
+  setMode(false);
 }
-modeButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.mode === 'before' ? 'rainbow' : 'taste')));
-fixtureButtons.forEach(button => button.addEventListener('click', () => applyFixture(button.dataset.fixture === 'rainbow' ? 'rainbow' : 'taste')));
+modeButtons.forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode === 'before')));
+specimenButtons.forEach(button => button.addEventListener('click', () => showSpecimen(button.dataset.specimen === 'rainbow' ? 'rainbow' : 'taste')));
 renderGallery(gallery, taste, id => {
   selectTaste(id);
   document.querySelector('#showcase')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -396,16 +493,17 @@ for (const input of [knobClasses, knobLabelSize, knobLabels, knobLine]) {
       updateUrl();
       syncModeButtons();
     }
-    showTasteSpecimen();
+    syncPlate();
     updateStyle();
+    runMapCheck();
   });
 }
 let checkTimer: ReturnType<typeof setTimeout> | undefined;
-styleInput.addEventListener('input', () => {
-  fixtureButtons.forEach(button => button.setAttribute('aria-pressed', 'false'));
+specimenInput.addEventListener('input', () => {
+  specimenButtons.forEach(button => button.setAttribute('aria-pressed', 'false'));
   paintRamp(null);
   clearTimeout(checkTimer);
-  checkTimer = setTimeout(runCheck, 160);
+  checkTimer = setTimeout(runSpecimen, 160);
 });
 function currentStyleDocument(): StyleSpecification {
   const theme = activeTheme();
@@ -484,5 +582,6 @@ theme.textContent = dark ? 'Light' : 'Dark';
 theme.setAttribute('aria-pressed', String(dark));
 syncModeButtons();
 syncChrome();
-applyFixture(before ? 'rainbow' : 'taste');
+setMode(before);
+showSpecimen('taste');
 void beginSession();

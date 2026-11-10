@@ -160,7 +160,7 @@ Deploy stays on Wrangler: `pnpm deploy` builds the showcase and runs `wrangler d
 
 ## MCP
 
-Published as `maptaste@0.0.1`.
+Published as `maptaste@0.0.2`.
 
 ```sh
 npx -y maptaste mcp
@@ -187,7 +187,7 @@ Cursor or Claude Desktop:
 - `preview_place` takes `place` or `ll` (`lng,lat`), and optional `zoom`, `mode` (`before` or `after`), `theme` (`light` or `dark`), `taste`, and `lang`. It returns a `https://maptaste.ledring.dev/` URL. A name is resolved in the browser, so `center` is null until then.
 - `preview_info` points at the local showcase: `cd showcase && pnpm install && pnpm dev`.
 
-0.0.1. Thresholds can change in any 0.x release. Input is MapLibre style JSON.
+0.0.2. Thresholds can change in any 0.x release. Input is MapLibre style JSON. See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

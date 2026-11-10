@@ -13,7 +13,7 @@ export function validateStyle(style: unknown): {ok: boolean; errors: string[]} {
  else { const s=object(style); if(typeof s.version!=='number'&&typeof s.version!=='string') errors.push('version must be a number or string'); if(!Array.isArray(s.layers)) errors.push('layers must be an array'); }
  return {ok:errors.length===0,errors};
 }
-const server=new Server({name:'maptaste',version:'0.0.1'},{capabilities:{tools:{}}});
+const server=new Server({name:'maptaste',version:'0.0.2'},{capabilities:{tools:{}}});
 server.setRequestHandler(ListToolsRequestSchema,async()=>({tools:[
  {name:'list_tastes',description:'List named maptaste schools: tokens, composition caps, and the plate (roads, type, extrusion, camera). Pick one before checking.',inputSchema:{type:'object',properties:{},additionalProperties:false}},
  {name:'check_taste',description:'Check a MapLibre style document against one named taste. Reads the style only: not features, not a legend, and not a rendered image. Defaults to ink-paper. The score is a taste score. coverage.statement says whether any taste errors block, how many values are unresolved, and that this is not a MapLibre validation. Unresolved values are MT014, not a pass. --pack global aliases ink-paper; --pack cn aliases cn-metro.',inputSchema:{type:'object',properties:{style:{type:'object'},styleJson:{type:'string'},taste:{type:'string',enum:[...tasteNames]},pack:{type:'string',enum:['global','cn']}},anyOf:[{required:['style']},{required:['styleJson']}],additionalProperties:false}},

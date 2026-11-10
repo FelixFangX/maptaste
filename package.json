@@ -1,6 +1,6 @@
 {
   "name": "maptaste",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Named MapLibre tastes. Each school is a plate — roads, type, labels — not a shared palette.",
   "author": "Felix Fang (https://github.com/FelixFangX)",
   "license": "MIT",
@@ -30,6 +30,7 @@
     "dist",
     "skills",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "dependencies": {

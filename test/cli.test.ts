@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 it('returns correct CLI exit codes and JSON', async () => {
  execFileSync('pnpm',['build']);
  const pkg = JSON.parse(readFileSync('package.json','utf8')) as { version: string; bin: Record<string, string>; scripts: { prepublishOnly: string } };
- expect(pkg.version).toBe('0.0.1');
+ expect(pkg.version).toBe('0.0.2');
  expect(pkg.bin).toEqual({ maptaste: 'dist/cli.js', 'maptaste-mcp': 'dist/mcp/server.js' });
  expect(pkg.scripts.prepublishOnly).toMatch(/build/);
  for (const file of Object.values(pkg.bin)) {

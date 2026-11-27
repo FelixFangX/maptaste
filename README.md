@@ -9,6 +9,14 @@ npx maptaste check style.json --taste ink-paper
 [![npm](https://img.shields.io/npm/v/maptaste)](https://www.npmjs.com/package/maptaste)
 [![demo](https://img.shields.io/badge/demo-maptaste.ledring.dev-555555)](https://maptaste.ledring.dev)
 
+![Before / After demo](docs/demo.gif)
+
+| Before (rainbow slop · `MT001` error) | After (`ink-paper` · 100/100) |
+| :---: | :---: |
+| ![Before rainbow slop](docs/example-harsh.png) | ![After ink-paper taste](docs/example-taste.png) |
+
+Taste family: **maptaste** (MapLibre styles) · [dashtaste](https://github.com/FelixFangX/dashtaste) ([demo](https://dashtaste.ledring.dev), dashboards).
+
 ## Tastes
 
 | Taste | School | What stays different with the colors removed |
@@ -81,7 +89,7 @@ Exit 0 when no finding is an error, 1 when any finding is an error, 2 when the f
 
 The score starts at 100. Each error subtracts 10, each warning 3, each info 1, with a floor of 0. A score of 100 means this subset raised no finding. The `Coverage:` line is the place to read that: unresolved values are outside the score, and the result is not a MapLibre style validation. The checker never sees features, a legend, or a framebuffer.
 
-Supported colors are `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`, `rgba()` with a 0–1 alpha, and the names white, black, red, orange, yellow, green, blue, purple, and cyan. Inside `step`, `interpolate`, `interpolate-hcl`, `interpolate-lab`, `match`, and `case`, only the outputs are colors. A `match` label is not a color, even when the label is the word `red`. Stops are the numbers written in the style. `0` is a real stop, and a negative stop is a real stop. `hsl()` and any branch the subset cannot read (`get`, `feature-state`, `coalesce` into data) are MT014: the score does not prove that property. Omitted `fill-opacity` is the MapLibre default `1`, which is not the same as `0`. Omitted `background-color` on a background layer is `#000000`, not white. A missing background layer is unproven ground, not white. `fill-extrusion-color` is read the same way as `fill-color`: outputs only, not the height expression. A layer whose `visibility` is the literal `none` is not painted. A visibility expression stays in scope.
+Supported colors are `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`, `rgba()` with a 0–1 alpha, `hsl()`, `hsla()` (both comma syntax and CSS Color 4 space syntax), and the names white, black, red, orange, yellow, green, blue, purple, and cyan. Inside `step`, `interpolate`, `interpolate-hcl`, `interpolate-lab`, `match`, and `case`, only the outputs are colors. A `match` label is not a color, even when the label is the word `red`. Stops are the numbers written in the style. `0` is a real stop, and a negative stop is a real stop. Unsupported color formats (`oklch()`, `lab()`) and any branch the subset cannot read (`get`, `feature-state`, `coalesce` into data) are MT014: the score does not prove that property. Omitted `fill-opacity` is the MapLibre default `1`, which is not the same as `0`. Omitted `background-color` on a background layer is `#000000`, not white. A missing background layer is unproven ground, not white. `fill-extrusion-color` is read the same way as `fill-color`: outputs only, not the height expression. A layer whose `visibility` is the literal `none` is not painted. A visibility expression stays in scope.
 
 ```ts
 import { check } from 'maptaste';
@@ -135,8 +143,6 @@ Caps below are the taste's own numbers (`npx maptaste tokens --taste <name>`). M
 [maptaste.ledring.dev](https://maptaste.ledring.dev)
 
 The first screen is the catalog: six tastes, each with a before ramp, that taste's after ramp, and a plate mark (stroke weight, label ranks). Choosing one opens the city study on that plate's camera. Before is the noisy rainbow atlas. After drops casings, minor streets, or the whole street network, changes the type, and — for night-ops — stands the buildings up. Terrain opens on the hillshade, not the towers. Classes, label size, label count, and stroke are knobs on the map. The score beside the map checks the style object currently set on that map. The style specimen below is a separate JSON. It is not drawn on the map, and its score does not describe the city.
-
-![Before / After demo](docs/demo.gif)
 
 Tiles, glyphs, and sprites come from OpenFreeMap with no API key. The page needs a network connection and WebGL. Attribution stays on the map.
 

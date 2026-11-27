@@ -11,6 +11,45 @@ export function shown(value: number): string {
   return String(Math.round(value * 1000) / 1000);
 }
 
+const NUM = '[+-]?(?:\\d+\\.?\\d*|\\.\\d+)';
+const ANGLE = `(${NUM})(deg|rad|grad|turn)?`;
+const PCT = `(${NUM})%`;
+const PCT_OR_NUM = `(${NUM})%?`;
+const ALPHA = `(${NUM})(%?)`;
+const HSL_COMMA = new RegExp(`^hsla?\\(\\s*${ANGLE}\\s*,\\s*${PCT}\\s*,\\s*${PCT}\\s*(?:,\\s*${ALPHA}\\s*)?\\)$`, 'i');
+const HSL_SPACE = new RegExp(`^hsla?\\(\\s*${ANGLE}\\s+${PCT_OR_NUM}\\s+${PCT_OR_NUM}\\s*(?:/\\s*${ALPHA}\\s*)?\\)$`, 'i');
+
+function parseHsl(raw: string): number[] | undefined {
+ const m = raw.match(HSL_COMMA) ?? raw.match(HSL_SPACE);
+ if (!m) return;
+ const hRaw = Number(m[1]);
+ const unit = m[2]?.toLowerCase();
+ const sPct = Number(m[3]);
+ const lPct = Number(m[4]);
+ if (!Number.isFinite(hRaw) || !Number.isFinite(sPct) || !Number.isFinite(lPct)) return;
+ if (sPct < 0 || sPct > 100 || lPct < 0 || lPct > 100) return;
+ if (m[5] !== undefined) {
+  const alpha = m[6] === '%' ? Number(m[5]) / 100 : Number(m[5]);
+  if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) return;
+ }
+ const deg = unit === 'turn' ? hRaw * 360 : unit === 'grad' ? hRaw * 0.9 : unit === 'rad' ? hRaw * (180 / Math.PI) : hRaw;
+ const h = ((deg % 360) + 360) % 360;
+ const s = sPct / 100;
+ const l = lPct / 100;
+ const c = (1 - Math.abs(2 * l - 1)) * s;
+ const hp = h / 60;
+ const x = c * (1 - Math.abs((hp % 2) - 1));
+ const offset = l - c / 2;
+ let r = 0, g = 0, b = 0;
+ if (hp < 1) { r = c; g = x; }
+ else if (hp < 2) { r = x; g = c; }
+ else if (hp < 3) { g = c; b = x; }
+ else if (hp < 4) { g = x; b = c; }
+ else if (hp < 5) { r = x; b = c; }
+ else { r = c; b = x; }
+ return [r + offset, g + offset, b + offset];
+}
+
 export function rgb(v: unknown): number[] | undefined {
  if (typeof v !== 'string') return;
  const names: Record<string,string> = { white:'#ffffff', black:'#000000', red:'#ff0000', orange:'#ffa500', yellow:'#ffff00', green:'#008000', blue:'#0000ff', purple:'#800080', cyan:'#00ffff' };
@@ -21,14 +60,16 @@ export function rgb(v: unknown): number[] | undefined {
   return full.slice(0, 6).match(/../g)!.map(c => parseInt(c, 16) / 255);
  }
  const m = raw.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(\d*\.?\d+)\s*)?\)$/i);
- if (!m) return;
- const channels = [m[1], m[2], m[3]].map(Number);
- if (channels.some(n => n > 255)) return;
- if (m[4] !== undefined) {
-  const alpha = Number(m[4]);
-  if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) return;
+ if (m) {
+  const channels = [m[1], m[2], m[3]].map(Number);
+  if (channels.some(n => n > 255)) return;
+  if (m[4] !== undefined) {
+   const alpha = Number(m[4]);
+   if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) return;
+  }
+  return channels.map(n => n / 255);
  }
- return channels.map(n => n / 255);
+ return parseHsl(raw);
 }
 export function luminance(v: unknown): number | undefined { const c=rgb(v); return c?.map(n=>n<=0.04045?n/12.92:((n+0.055)/1.055)**2.4).reduce((s,n,i)=>s+n*[0.2126,0.7152,0.0722][i],0); }
 export function contrast(a: unknown,b: unknown): number | undefined { const x=luminance(a),y=luminance(b); return x===undefined||y===undefined?undefined:(Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }

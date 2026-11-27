@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { check } from '../src/index.js';
+import { contrast, luminance, rgb, saturation } from '../src/rules/utils.js';
 import type { StyleDoc, TasteName } from '../src/types.js';
 
 function style(layers: StyleDoc['layers'], taste?: TasteName) {
@@ -34,21 +35,86 @@ describe('style evidence', () => {
     expect(bare.findings.some(finding => finding.id === 'MT014')).toBe(true);
   });
 
-  it('reports hsl and feature colors as unknown instead of a pass', () => {
-    const hsl = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': 'hsl(0, 100%, 50%)' } }]);
+  it('parses legacy comma and CSS Color 4 space hsl()/hsla() colors accurately', () => {
+    const expectRgbClose = (color: string, expected: [number, number, number]) => {
+      const actual = rgb(color);
+      expect(actual, color).toBeDefined();
+      expected.forEach((channel, i) => expect(actual![i]).toBeCloseTo(channel, 4));
+    };
+    expectRgbClose('hsl(0, 100%, 50%)', [1, 0, 0]);
+    expectRgbClose('hsl(120, 100%, 50%)', [0, 1, 0]);
+    expectRgbClose('hsl(240, 100%, 50%)', [0, 0, 1]);
+    expectRgbClose('hsl(210, 50%, 40%)', [0.2, 0.4, 0.6]);
+    expectRgbClose('hsla(210, 50%, 40%, 0.5)', [0.2, 0.4, 0.6]);
+    expectRgbClose('hsla(0,3%,85%,0.84)', [0.8545, 0.8455, 0.8455]);
+    expectRgbClose('hsl(210 50% 40%)', [0.2, 0.4, 0.6]);
+    expectRgbClose('hsl(210 50% 40% / 0.5)', [0.2, 0.4, 0.6]);
+    expectRgbClose('hsla(210 50% 40% / 50%)', [0.2, 0.4, 0.6]);
+    expectRgbClose('hsl(360, 100%, 50%)', [1, 0, 0]);
+    expectRgbClose('hsl(-120deg 100% 50%)', [0, 0, 1]);
+    expectRgbClose('hsl(0.5turn 100% 50%)', [0, 1, 1]);
+    expectRgbClose('hsl(200grad, 100%, 50%)', [0, 1, 1]);
+    expectRgbClose('hsl(3.14159265rad 100% 50%)', [0, 1, 1]);
+    expectRgbClose('hsl(0, 0%, 100%)', [1, 1, 1]);
+    expectRgbClose('hsl(0, 0%, 0%)', [0, 0, 0]);
+
+    expect(luminance('hsl(0, 0%, 100%)')).toBeCloseTo(1, 5);
+    expect(luminance('hsl(0, 0%, 0%)')).toBeCloseTo(0, 5);
+    expect(saturation('hsl(210, 50%, 40%)')).toBeCloseTo(0.5, 5);
+    expect(contrast('hsl(0 0% 0%)', 'hsl(0 0% 100%)')).toBeCloseTo(21, 3);
+
+    // Invalid hsl/hsla strings are rejected
+    for (const bad of [
+      'hsl(210, 50% 40%)',
+      'hsl(210, 50%, 40% / 0.5)',
+      'hsl(210, 50, 40)',
+      'hsl(0, 120%, 50%)',
+      'hsl(0, -10%, 50%)',
+      'hsl(0, 50%, 105%)',
+      'hsla(0, 50%, 50%, 1.5)',
+      'hsl(0 50% 50% / -0.1)',
+      'hsl(0 50% 50% / 120%)',
+    ]) {
+      expect(rgb(bad), bad).toBeUndefined();
+    }
+  });
+
+  it('checks hsl()/hsla() styles for rainbow, saturation, ground, and contrast without MT014', () => {
+    const rainbowComma = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': ['step', ['get', 'value'], 'hsl(0, 100%, 50%)', 1, 'hsl(60, 100%, 50%)', 2, 'hsl(120, 100%, 50%)', 3, 'hsl(180, 100%, 50%)'] } }]);
+    const rainbowSpace = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': ['step', ['get', 'value'], 'hsl(0 100% 50% / 0.9)', 1, 'hsl(60 100% 50% / 0.9)', 2, 'hsl(120 100% 50% / 0.9)', 3, 'hsl(180 100% 50% / 0.9)'] } }]);
+    const quietHsl = style([
+      { id: 'background', type: 'background', paint: { 'background-color': 'hsl(40, 22%, 90%)' } },
+      { id: 'land', type: 'fill', paint: { 'fill-color': 'hsla(35, 8%, 85%, 0.84)' } },
+      { id: 'label', type: 'symbol', layout: { 'text-field': 'Place' }, paint: { 'text-color': 'hsl(215 24% 16%)' } },
+    ]);
+    const saturated = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': 'hsl(0, 100%, 50%)' } }]);
+
+    expect(rainbowComma.findings.some(finding => finding.id === 'MT001')).toBe(true);
+    expect(rainbowComma.findings.some(finding => finding.id === 'MT014')).toBe(false);
+    expect(rainbowSpace.findings.some(finding => finding.id === 'MT001')).toBe(true);
+    expect(rainbowSpace.findings.some(finding => finding.id === 'MT014')).toBe(false);
+    expect(quietHsl.findings).toEqual([]);
+    expect(quietHsl.score).toBe(100);
+    expect(saturated.findings.some(finding => finding.id === 'MT014')).toBe(false);
+    expect(saturated.findings.some(finding => finding.id === 'MT006')).toBe(true);
+  });
+
+  it('reports unsupported color formats and feature colors as unknown instead of a pass', () => {
+    const oklch = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': 'oklch(62.8% 0.258 29.2)' } }]);
+    const lab = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': 'lab(50% 40 59.5)' } }]);
     const feature = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': ['get', 'color'] } }]);
     const coalesced = style([paper, { id: 'values', type: 'fill', paint: { 'fill-color': ['coalesce', ['get', 'color'], '#ff0000'] } }]);
-    for (const result of [hsl, feature, coalesced]) {
+    for (const result of [oklch, lab, feature, coalesced]) {
       expect(result.findings.some(finding => finding.id === 'MT001')).toBe(false);
       expect(result.findings.some(finding => finding.id === 'MT014')).toBe(true);
       expect(result.score).toBeLessThan(100);
     }
-    expect(hsl.findings.find(finding => finding.id === 'MT014')?.evidence).toContain('color is outside');
-    expect(hsl.coverage.blockingErrors).toBe(0);
-    expect(hsl.coverage.unresolved).toBeGreaterThan(0);
-    expect(hsl.coverage.statement).toContain('No blocking taste errors.');
-    expect(hsl.coverage.statement).toContain('The score does not cover them.');
-    expect(hsl.coverage.statement).toContain('Not a MapLibre style validation.');
+    expect(oklch.findings.find(finding => finding.id === 'MT014')?.evidence).toContain('color is outside');
+    expect(oklch.coverage.blockingErrors).toBe(0);
+    expect(oklch.coverage.unresolved).toBeGreaterThan(0);
+    expect(oklch.coverage.statement).toContain('No blocking taste errors.');
+    expect(oklch.coverage.statement).toContain('The score does not cover them.');
+    expect(oklch.coverage.statement).toContain('Not a MapLibre style validation.');
     expect(coalesced.findings.some(finding => finding.id === 'MT001')).toBe(false);
   });
 

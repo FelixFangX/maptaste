@@ -111,7 +111,7 @@ export function readPaint(value: unknown, depth = 0): PaintRead {
   }
   if (typeof value === 'string') {
     if (rgb(value)) return known({ colors: [value], numbers: [] });
-    return unknown('color is outside #rgb, #rrggbb, #rrggbbaa, rgb(), and rgba()');
+    return unknown('color is outside #rgb, #rrggbb, #rrggbbaa, rgb(), rgba(), hsl(), and hsla()');
   }
   if (Array.isArray(value) && typeof value[0] === 'string') return readExpr(value, depth);
   return unknown('value is not a color, number, or supported expression');

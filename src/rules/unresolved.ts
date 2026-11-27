@@ -58,7 +58,7 @@ export const unresolved: Rule = { id: 'MT014', severity: 'info', packs: ['global
         message: 'maptaste cannot read this value, so this score does not prove it.',
         evidence: reason,
         remedy: expect === 'color'
-          ? 'Use a hex, rgb(), or rgba() color, or a step/interpolate whose outputs are those colors.'
+          ? 'Use a hex, rgb(), rgba(), hsl(), or hsla() color, or a step/interpolate whose outputs are those colors.'
           : 'Use a number, or a step/interpolate whose stops and outputs are numbers.',
       });
     };

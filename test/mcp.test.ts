@@ -20,7 +20,7 @@ it('answers check_taste over MCP stdio', async () => {
   child.stdin!.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`);
   const response = await call(2, {
     jsonrpc: '2.0', id: 2, method: 'tools/call',
-    params: { name: 'check_taste', arguments: { taste: 'ink-paper', style: { version: 8, layers: [{ id: 'values', type: 'fill', paint: { 'fill-color': 'hsl(0, 100%, 50%)' } }] } } },
+    params: { name: 'check_taste', arguments: { taste: 'ink-paper', style: { version: 8, layers: [{ id: 'values', type: 'fill', paint: { 'fill-color': 'oklch(62.8% 0.258 29.2)' } }] } } },
   }) as { result?: { isError?: boolean; content?: { text?: string }[] } };
   child.kill();
   expect(response.result?.isError).not.toBe(true);
